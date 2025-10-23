@@ -1,0 +1,10 @@
+[package]
+name = "chimera_prediction_market"
+version = "1.0.0"
+edition = "2024.beta"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
+
+[addresses]
+chimera_prediction_market = "0x0"

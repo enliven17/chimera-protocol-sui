@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { WalletButton } from "./wallet-button";
+import { SuiWalletButton } from "../SuiWalletButton";
 
 export function Header() {
   return (
@@ -27,17 +27,10 @@ export function Header() {
               <nav className="hidden md:flex items-center space-x-6">
                 <Link 
                   href="/markets" 
-                  className="text-gray-300 hover:text-white transition-colors text-sm font-medium"
+                  className="text-gray-300 hover:text-[#4DA6FF] transition-colors text-sm font-medium"
                 >
                   Markets
                 </Link>
-                <Link 
-                  href="/bridge" 
-                  className="text-gray-300 hover:text-[#FFE100] transition-colors text-sm font-medium"
-                >
-                  Bridge
-                </Link>
-
                 <Link 
                   href="/dashboard/my-bets" 
                   className="text-gray-300 hover:text-white transition-colors text-sm font-medium"
@@ -53,7 +46,7 @@ export function Header() {
               </nav>
             </div>
             {/* Wallet Button */}
-            <WalletButton />
+            <SuiWalletButton />
           </div>
         </div>
       </div>

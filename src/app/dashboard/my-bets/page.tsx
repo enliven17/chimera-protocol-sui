@@ -1,14 +1,15 @@
 "use client";
 
-import { MyBets } from "@/components/market/my-bets";
-import { useAccount } from "wagmi";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Wallet } from "lucide-react";
 import Link from "next/link";
 
 export default function MyBetsPage() {
-  const { address, isConnected } = useAccount();
+  const currentAccount = useCurrentAccount();
+  const isConnected = !!currentAccount;
+  const address = currentAccount?.address;
 
   if (!isConnected || !address) {
     return (
@@ -28,8 +29,8 @@ export default function MyBetsPage() {
             {/* Connect Wallet Card */}
             <Card className="bg-gradient-to-br from-[#1A1F2C] to-[#151923] border-gray-800/50 shadow-xl">
               <CardContent className="p-8 text-center">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-[#eab308]/20 to-[#ca8a04]/20 rounded-full flex items-center justify-center mb-6">
-                  <Wallet className="h-8 w-8 text-[#eab308]" />
+                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-[#4DA6FF]/20 to-[#3B82F6]/20 rounded-full flex items-center justify-center mb-6">
+                  <Wallet className="h-8 w-8 text-[#4DA6FF]" />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-3">
                   Connect Your Wallet
@@ -40,7 +41,7 @@ export default function MyBetsPage() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
                     asChild
-                    className="bg-gradient-to-r from-[#eab308] to-[#ca8a04] hover:from-[#ca8a04] hover:to-[#a16207] text-white"
+                    className="bg-gradient-to-r from-[#4DA6FF] to-[#3B82F6] hover:from-[#3B82F6] hover:to-[#2563EB] text-white"
                   >
                     <Link href="/markets">
                       Browse Markets
@@ -71,7 +72,7 @@ export default function MyBetsPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-4">
-              <BarChart3 className="h-8 w-8 text-[#eab308]" />
+              <BarChart3 className="h-8 w-8 text-[#4DA6FF]" />
               <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent">
                 My Betting History
               </h1>
@@ -81,11 +82,31 @@ export default function MyBetsPage() {
             </p>
           </div>
 
-          {/* My Bets Component */}
-          <MyBets
-            userAddress={address}
-            showAllBets={true}
-          />
+          {/* My Bets Component - Coming Soon */}
+          <Card className="bg-gradient-to-br from-[#1A1F2C] to-[#151923] border-gray-800/50 shadow-xl">
+            <CardContent className="p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-[#4DA6FF]/20 to-[#3B82F6]/20 rounded-full flex items-center justify-center mb-6">
+                <BarChart3 className="h-8 w-8 text-[#4DA6FF]" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-3">
+                Betting History Coming Soon
+              </h3>
+              <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                Your Sui prediction market betting history will appear here once you start placing bets.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+              </p>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-[#4DA6FF] to-[#3B82F6] hover:from-[#3B82F6] hover:to-[#2563EB] text-white"
+              >
+                <Link href="/markets">
+                  Start Betting
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

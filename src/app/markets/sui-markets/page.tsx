@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
@@ -9,12 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { SuiWalletButton } from '@/components/SuiWalletButton';
 import { SuiMarketCard } from '@/components/SuiMarketCard';
 import { createMarket, getAllMarkets, Market, MARKET_TYPE_CUSTOM, MARKET_TYPE_PRICE } from '@/lib/sui-client';
 import { toast } from 'sonner';
 import { Plus, RefreshCw } from 'lucide-react';
 
-export default function MarketsPage() {
+export default function SuiMarketsPage() {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const connected = !!currentAccount;
@@ -104,7 +105,7 @@ export default function MarketsPage() {
         formData.marketType,
         Math.floor(parseFloat(formData.targetPrice) * 1e8), // Price with 8 decimals
         formData.priceAbove,
-        signAndExecuteTransaction
+        { signAndExecuteTransaction }
       );
 
       toast.success('Market created successfully!');
@@ -136,7 +137,7 @@ export default function MarketsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Prediction Markets</h1>
+          <h1 className="text-3xl font-bold">Sui Prediction Markets</h1>
           <p className="text-muted-foreground mt-2">
             Decentralized prediction markets on Sui blockchain
           </p>
@@ -151,6 +152,7 @@ export default function MarketsPage() {
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <SuiWalletButton />
         </div>
       </div>
 
@@ -290,7 +292,7 @@ export default function MarketsPage() {
                 <Switch
                   id="marketType"
                   checked={formData.marketType === MARKET_TYPE_PRICE}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked) => 
                     setFormData({ ...formData, marketType: checked ? MARKET_TYPE_PRICE : MARKET_TYPE_CUSTOM })
                   }
                 />

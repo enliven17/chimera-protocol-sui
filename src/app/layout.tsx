@@ -2,9 +2,10 @@
 import { headers } from "next/headers";
 import { Header } from "@/components/shared/header";
 import { TermsGuard } from "@/components/shared/terms-guard";
-import { Web3Provider } from "@/providers/web3-provider";
+import { SuiWalletProvider } from "@/providers/SuiWalletProvider";
 import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
+import '@mysten/dapp-kit/dist/index.css';
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from "@/components/shared/footer";
 import { FloatingChatbot } from "@/components/shared/floating-chatbot";
@@ -14,16 +15,16 @@ const bricolage = Bricolage_Grotesque({ subsets: ["latin"] });
 // Global Metadata
 export const metadata = {
   title: {
-    default: "ChimeraAI – AI-Powered Prediction Markets",
+    default: "ChimeraAI – Sui Prediction Markets",
     template: "%s | ChimeraAI",
   },
   description:
-    "AI-powered prediction markets on Hedera EVM with autonomous agents, Pyth Oracle integration, and PYUSD betting. Features ASI Alliance reasoning and Lit Protocol secure execution.",
+    "Decentralized prediction markets on Sui blockchain. Create, trade, and profit from real-world event predictions with SUI tokens.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   openGraph: {
-    title: "ChimeraAI – AI-Powered Prediction Markets",
+    title: "ChimeraAI – Sui Prediction Markets",
     description:
-      "AI-powered prediction markets with autonomous agents, oracle integration, and secure execution on Hedera EVM.",
+      "Decentralized prediction markets on Sui blockchain. Create, trade, and profit from real-world event predictions.",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     siteName: "ChimeraAI",
     images: [
@@ -39,9 +40,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ChimeraAI – AI-Powered Prediction Markets",
+    title: "ChimeraAI – Sui Prediction Markets",
     description:
-      "AI-powered prediction markets with autonomous agents on Hedera EVM.",
+      "Decentralized prediction markets on Sui blockchain with SUI tokens.",
     creator: "@chimeraai",
     images: [],
   },
@@ -70,7 +71,7 @@ export default async function RootLayout({
         className={`${bricolage.className} bg-gradient-to-r from-[#0A0C14] via-[#1A1F2C] to-[#0A0C14]`}
       >
         <ErrorBoundary>
-          <Web3Provider>
+          <SuiWalletProvider>
             <div className="min-h-screen flex flex-col bg-gradient-to-r from-[#0A0C14] via-[#1A1F2C] to-[#0A0C14] text-white relative">
               <TermsGuard>
                 <Header />
@@ -80,7 +81,7 @@ export default async function RootLayout({
               <FloatingChatbot />
             </div>
             <Toaster theme="dark" position="top-right" />
-          </Web3Provider>
+          </SuiWalletProvider>
         </ErrorBoundary>
       </body>
     </html>
