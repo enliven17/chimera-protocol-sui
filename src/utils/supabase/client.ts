@@ -1,0 +1,1 @@
+﻿import { createClient, SupabaseClient } from "@supabase/supabase-js";`n`nconst supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;`nconst supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;`n`nexport const supabase: SupabaseClient | null =`n  supabaseUrl && supabaseAnonKey`n    ? createClient(supabaseUrl, supabaseAnonKey)`n    : null as unknown as SupabaseClient;

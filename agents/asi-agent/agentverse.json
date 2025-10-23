@@ -1,0 +1,17 @@
+{
+  "name": "Chimera ASI Market Analyzer",
+  "description": "Autonomous agent using direct contract data and MeTTa reasoning to generate contrarian betting signals.",
+  "tags": ["chimera", "prediction-markets", "metta", "uagents", "hedera"],
+  "endpoints": [
+    "http://localhost:8001/submit"
+  ],
+  "protocols": ["MarketAnalysis", "Chat"],
+  "almanac": {
+    "enabled": true
+  },
+  "contact": {
+    "website": "https://superintelligence.io",
+    "twitter": "asi_alliance"
+  }
+}
+

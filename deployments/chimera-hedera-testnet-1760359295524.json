@@ -1,0 +1,14 @@
+{
+  "network": "hedera-testnet",
+  "chainId": 296,
+  "timestamp": "2025-10-13T12:41:35.523Z",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "contracts": {
+    "ChimeraProtocol": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "pythOracle": "0xA2aa501b19aff244D90cc15a4Cf739D2725B5729",
+      "pyusdToken": "0x9D5F12DBe903A0741F675e4Aa4454b2F7A010aB4",
+      "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    }
+  }
+}
