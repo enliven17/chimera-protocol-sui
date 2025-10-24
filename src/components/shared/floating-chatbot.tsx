@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, X, Minimize2, Maximize2 } from "lucide-react";
+import { MessageCircle, X, Minimize2, Maximize2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ASIChatContent } from "@/components/agents/asi-chat-content";
+import { GeminiMarketChat } from "@/components/shared/gemini-market-chat";
 
 export function FloatingChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,9 +32,9 @@ export function FloatingChatbot() {
         <div className="fixed bottom-6 right-6 z-50">
           <Button
             onClick={toggleOpen}
-            className="h-14 w-14 rounded-full bg-gradient-to-r from-[#FFE100] to-[#E6CC00] hover:from-[#E6CC00] hover:to-[#CCAA00] text-black shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
+            className="h-14 w-14 rounded-full bg-gradient-to-r from-[#4DA6FF] to-[#3B82F6] hover:from-[#3B82F6] hover:to-[#2563EB] text-white shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
           >
-            <MessageCircle className="h-6 w-6" />
+            <Sparkles className="h-6 w-6" />
           </Button>
         </div>
       )}
@@ -52,8 +52,8 @@ export function FloatingChatbot() {
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-gray-800/50">
               <div className="flex items-center space-x-2">
-                <MessageCircle className="h-5 w-5 text-[#FFE100]" />
-                <span className="text-lg font-semibold text-white">Chimera Assistant</span>
+                <Sparkles className="h-5 w-5 text-[#4DA6FF]" />
+                <span className="text-lg font-semibold text-white">Market Analyst</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Button
@@ -79,10 +79,10 @@ export function FloatingChatbot() {
               </div>
             </div>
 
-            {/* Content - Only AI Chat */}
+            {/* Content - Gemini Market Chat */}
             {!isMinimized && (
               <div className="h-[calc(100%-4rem)]">
-                <ASIChatContent />
+                <GeminiMarketChat />
               </div>
             )}
           </div>

@@ -12,42 +12,43 @@ import {
   Loader2, 
   RefreshCw,
   TrendingUp,
-  AlertTriangle
+  BarChart3,
+  Target,
+  Sparkles
 } from 'lucide-react';
-import { useASIAgentStatus } from '@/hooks/useASIAgent';
 import { toast } from 'sonner';
+import { getAllMarkets } from '@/lib/sui-client';
 
 interface ChatMessage {
   id: string;
-  type: 'user' | 'agent';
+  type: 'user' | 'assistant';
   content: string;
   timestamp: Date;
   analysis?: {
-    marketId: string;
-    recommendation: string;
+    marketTitle: string;
+    recommendation: 'BUY_A' | 'BUY_B' | 'HOLD' | 'AVOID';
     confidence: number;
     reasoning: string;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   }[];
 }
 
-interface ASIChatContentProps {
+interface GeminiMarketChatProps {
   className?: string;
 }
 
-export function ASIChatContent({ className }: ASIChatContentProps) {
+export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      type: 'agent',
-      content: 'Hello! I\'m the Chimera ASI Agent. I can help you analyze markets, provide betting recommendations, and answer questions about prediction markets. Try asking me about specific markets or say "analyze all markets".',
+      type: 'assistant',
+      content: 'Hello! I\'m your Sui Market Analyst powered by Gemini AI. I can help you analyze prediction markets, provide betting recommendations, and explain market trends. Ask me about specific markets or say "analyze all markets".',
       timestamp: new Date(),
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-
-  const { data: agentStatus } = useASIAgentStatus();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -74,13 +75,17 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/asi-agent/chat', {
+      // Get current markets for context
+      const markets = await getAllMarkets();
+      
+      const response = await fetch('/api/gemini/market-analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: userMessage.content,
+          markets: markets,
           conversationHistory: messages.slice(-5), // Send last 5 messages for context
         }),
       });
@@ -91,28 +96,28 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
 
       const data = await response.json();
 
-      const agentMessage: ChatMessage = {
+      const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        type: 'agent',
+        type: 'assistant',
         content: data.response || 'I apologize, but I encountered an error processing your request.',
         timestamp: new Date(),
         analysis: data.analysis,
       };
 
-      setMessages(prev => [...prev, agentMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
       console.error('Error sending message:', error);
       
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        type: 'agent',
-        content: 'I apologize, but I\'m currently unable to process your request. Please try again later or check if the ASI Agent service is running.',
+        type: 'assistant',
+        content: 'I apologize, but I\'m currently unable to process your request. Please try again later.',
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, errorMessage]);
-      toast.error('Failed to send message to ASI Agent');
+      toast.error('Failed to get market analysis');
     } finally {
       setIsLoading(false);
     }
@@ -129,36 +134,50 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
     setMessages([
       {
         id: '1',
-        type: 'agent',
-        content: 'Hello! I\'m the Chimera ASI Agent. I can help you analyze markets, provide betting recommendations, and answer questions about prediction markets. Try asking me about specific markets or say "analyze all markets".',
+        type: 'assistant',
+        content: 'Hello! I\'m your Sui Market Analyst powered by Gemini AI. I can help you analyze prediction markets, provide betting recommendations, and explain market trends. Ask me about specific markets or say "analyze all markets".',
         timestamp: new Date(),
       }
     ]);
   };
 
   const quickActions = [
-    { label: 'Analyze Markets', message: 'analyze all markets' },
-    { label: 'Get Recommendations', message: 'give me betting recommendations' },
-    { label: 'Market Status', message: 'what is the current market status?' },
+    { label: 'Analyze Markets', message: 'analyze all available markets', icon: BarChart3 },
+    { label: 'Best Opportunities', message: 'what are the best betting opportunities right now?', icon: Target },
+    { label: 'Market Trends', message: 'explain current market trends', icon: TrendingUp },
+    { label: 'Risk Assessment', message: 'assess the risk levels of current markets', icon: Sparkles },
   ];
+
+  const getRecommendationColor = (recommendation: string) => {
+    switch (recommendation) {
+      case 'BUY_A': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'BUY_B': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'HOLD': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'AVOID': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getRiskColor = (risk: string) => {
+    switch (risk) {
+      case 'LOW': return 'text-green-400';
+      case 'MEDIUM': return 'text-yellow-400';
+      case 'HIGH': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-800/50">
         <div className="flex items-center space-x-2">
-          <Bot className="h-5 w-5 text-[#FFE100]" />
-          <span className="font-semibold text-white">ASI Agent Chat</span>
+          <Sparkles className="h-5 w-5 text-[#4DA6FF]" />
+          <span className="font-semibold text-white">Market Analyst</span>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge 
-            className={`text-xs ${
-              agentStatus?.isOnline 
-                ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                : 'bg-red-500/20 text-red-400 border-red-500/30'
-            }`}
-          >
-            {agentStatus?.isOnline ? 'Connecting...' : 'Offline'}
+          <Badge className="bg-[#4DA6FF]/20 text-[#4DA6FF] border-[#4DA6FF]/30 text-xs">
+            Gemini AI
           </Badge>
           <Button
             variant="ghost"
@@ -182,16 +201,16 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
               <div
                 className={`max-w-[80%] rounded-lg p-3 ${
                   message.type === 'user'
-                    ? 'bg-[#FFE100] text-black'
+                    ? 'bg-[#4DA6FF] text-white'
                     : 'bg-gray-800/50 text-white border border-gray-700/50'
                 }`}
               >
                 <div className="flex items-start space-x-2">
-                  {message.type === 'agent' && (
-                    <Bot className="h-4 w-4 text-[#FFE100] mt-0.5 flex-shrink-0" />
+                  {message.type === 'assistant' && (
+                    <Sparkles className="h-4 w-4 text-[#4DA6FF] mt-0.5 flex-shrink-0" />
                   )}
                   {message.type === 'user' && (
-                    <User className="h-4 w-4 text-black mt-0.5 flex-shrink-0" />
+                    <User className="h-4 w-4 text-white mt-0.5 flex-shrink-0" />
                   )}
                   <div className="flex-1">
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -200,21 +219,31 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
                     {message.analysis && message.analysis.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {message.analysis.map((analysis, index) => (
-                          <div key={index} className="bg-gray-900/50 rounded p-2 border border-gray-600/30">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium text-[#FFE100]">
-                                Market Analysis
+                          <div key={index} className="bg-gray-900/50 rounded p-3 border border-gray-600/30">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-[#4DA6FF] truncate">
+                                {analysis.marketTitle}
                               </span>
-                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                                {analysis.confidence}% confidence
-                              </Badge>
+                              <div className="flex items-center space-x-2">
+                                <Badge className={`text-xs ${getRecommendationColor(analysis.recommendation)}`}>
+                                  {analysis.recommendation.replace('_', ' ')}
+                                </Badge>
+                                <span className="text-xs text-gray-400">
+                                  {analysis.confidence}%
+                                </span>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-300 mb-1">
-                              <strong>Recommendation:</strong> {analysis.recommendation}
-                            </p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-300 mb-2">
                               {analysis.reasoning}
                             </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-400">
+                                Risk Level:
+                              </span>
+                              <span className={`text-xs font-medium ${getRiskColor(analysis.riskLevel)}`}>
+                                {analysis.riskLevel}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -233,9 +262,9 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
             <div className="flex justify-start">
               <div className="bg-gray-800/50 text-white border border-gray-700/50 rounded-lg p-3 max-w-[80%]">
                 <div className="flex items-center space-x-2">
-                  <Bot className="h-4 w-4 text-[#FFE100]" />
-                  <Loader2 className="h-4 w-4 animate-spin text-[#FFE100]" />
-                  <span className="text-sm text-gray-300">ASI Agent is thinking...</span>
+                  <Sparkles className="h-4 w-4 text-[#4DA6FF]" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[#4DA6FF]" />
+                  <span className="text-sm text-gray-300">Analyzing markets...</span>
                 </div>
               </div>
             </div>
@@ -245,15 +274,16 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
 
       {/* Quick Actions */}
       <div className="p-3 border-t border-gray-800/50">
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="grid grid-cols-2 gap-1 mb-3">
           {quickActions.map((action, index) => (
             <Button
               key={index}
               variant="outline"
               size="sm"
               onClick={() => setInputValue(action.message)}
-              className="text-xs border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+              className="text-xs border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white justify-start"
             >
+              <action.icon className="h-3 w-3 mr-1" />
               {action.label}
             </Button>
           ))}
@@ -265,14 +295,14 @@ export function ASIChatContent({ className }: ASIChatContentProps) {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask me about markets, get recommendations, or say 'help'"
-            className="flex-1 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:border-[#FFE100] focus:ring-[#FFE100]/20"
+            placeholder="Ask me about market analysis, trends, or recommendations..."
+            className="flex-1 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:border-[#4DA6FF] focus:ring-[#4DA6FF]/20"
             disabled={isLoading}
           />
           <Button
             onClick={sendMessage}
             disabled={!inputValue.trim() || isLoading}
-            className="bg-gradient-to-r from-[#FFE100] to-[#E6CC00] hover:from-[#E6CC00] hover:to-[#CCAA00] text-black"
+            className="bg-gradient-to-r from-[#4DA6FF] to-[#3B82F6] hover:from-[#3B82F6] hover:to-[#2563EB] text-white"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
