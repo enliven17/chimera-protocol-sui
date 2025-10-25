@@ -1,6 +1,5 @@
 ﻿import React from 'react';
-import { useContractOwner } from '@/hooks/use-contract-owner';
-import { useAccount } from 'wagmi';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 import { Button } from '@/components/ui/button';
 import { Lock, AlertCircle } from 'lucide-react';
 import { truncateAddress } from '@/lib/utils';
@@ -10,52 +9,31 @@ interface OwnerOnlyProps {
   fallback?: React.ReactNode;
   showFallback?: boolean;
   showDebugInfo?: boolean;
+  marketCreator?: string; // Sui market creator address
 }
 
 export const OwnerOnly: React.FC<OwnerOnlyProps> = ({ 
   children, 
   fallback,
   showFallback = true,
-  showDebugInfo = false
+  showDebugInfo = false,
+  marketCreator
 }) => {
-  const { address, isConnected } = useAccount();
-  const { isOwner, isLoading, error, contractAddress, userAddress } = useContractOwner();
+  const currentAccount = useCurrentAccount();
+  const isConnected = !!currentAccount;
+  const userAddress = currentAccount?.address;
+
+  // For Sui, we check if the current user is the market creator
+  const isOwner = marketCreator ? userAddress === marketCreator : false;
 
   // Debug info for development
   if (showDebugInfo && process.env.NODE_ENV === 'development') {
     console.log("OwnerOnly Debug:", {
       userLoggedIn: isConnected,
       userAddress,
-      contractAddress,
-      isOwner,
-      isLoading,
-      error
+      marketCreator,
+      isOwner
     });
-  }
-
-  // Loading state
-  if (isLoading) {
-    return showFallback ? (
-      <Button disabled className="bg-gray-300">
-        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-        Checking permissions...
-      </Button>
-    ) : null;
-  }
-
-  // Error state
-  if (error) {
-    return showFallback ? (
-      <div className="text-center">
-        <Button disabled variant="outline" className="text-red-500 border-red-200">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          Permission Error
-        </Button>
-        {showDebugInfo && (
-          <p className="text-xs text-red-400 mt-1">{error}</p>
-        )}
-      </div>
-    ) : null;
   }
 
   // Not logged in
@@ -67,37 +45,37 @@ export const OwnerOnly: React.FC<OwnerOnlyProps> = ({
           Login Required
         </Button>
         <p className="text-xs text-gray-400 mt-1">
-          Please connect your wallet
+          Please connect your Sui wallet
         </p>
       </div>
     ) : null;
   }
 
-  // Not contract owner
+  // Not market creator
   if (!isOwner) {
     return showFallback ? (
       fallback || (
         <div className="text-center">
           <Button disabled variant="outline" className="text-gray-500">
             <Lock className="h-4 w-4 mr-2" />
-            Owner Only
+            Creator Only
           </Button>
           <div className="text-xs text-gray-400 mt-1 space-y-1">
             <p>Current: {truncateAddress(userAddress)}</p>
-            <p>Required: {truncateAddress(contractAddress)}</p>
+            {marketCreator && <p>Required: {truncateAddress(marketCreator)}</p>}
           </div>
         </div>
       )
     ) : null;
   }
 
-  // Is contract owner - render children
+  // Is market creator - render children
   return (
     <div>
       {children}
       {showDebugInfo && (
         <p className="text-xs text-yellow-500 mt-1">
-          ✅ Contract Owner: {truncateAddress(userAddress)}
+          ✅ Market Creator: {truncateAddress(userAddress)}
         </p>
       )}
     </div>

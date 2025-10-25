@@ -15,7 +15,6 @@ import {
 
 // Import our hooks
 import { useCryptoPrices } from "@/hooks/usePythPrices";
-import { useASIAgentStatus, useASIPerformanceMetrics } from "@/hooks/useASIAgent";
 import { usePYUSDBridgeDashboard } from "@/hooks/usePYUSDBridge";
 import { useAccount } from "wagmi";
 
@@ -24,8 +23,21 @@ export function CompactDashboard() {
 
   // Data hooks
   const { data: cryptoPrices, isLoading: pricesLoading } = useCryptoPrices();
-  const { data: asiStatus } = useASIAgentStatus();
-  const { data: asiPerformance } = useASIPerformanceMetrics();
+  
+  // Mock data since ASI agent is not available
+  const asiStatus = {
+    isOnline: false,
+    lastUpdate: new Date().toISOString(),
+    status: 'offline'
+  };
+  
+  const asiPerformance = {
+    totalTrades: 0,
+    successRate: 0,
+    profitLoss: 0,
+    activeMarkets: 0
+  };
+  
   const bridgeDashboard = usePYUSDBridgeDashboard(address);
 
   const handleRefreshAll = () => {

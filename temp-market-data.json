@@ -1,0 +1,27 @@
+{
+  "id": "market-1-sui-2025",
+  "title": "SUI Will Reach  by December 31, 2025?",
+  "description": "Will SUI token reach  USD by December 31, 2025?",
+  "category": "0",
+  "endDate": "2025-12-31T23:59:59.000Z",
+  "options": {
+    "A": "Yes, SUI will reach ",
+    "B": "No, SUI will not reach "
+  },
+  "totalVolume": 0,
+  "totalBets": 0,
+  "status": "active",
+  "createdAt": "2025-10-25T12:57:43.234Z",
+  "createdBy": "0x49293beaeab9791f33ccb4aee95b9f6d10e9d6d4422707d809ad90649512bcab",
+  "metadata": {
+    "suiTransaction": true,
+    "marketType": 0,
+    "minBet": 100000000,
+    "maxBet": 1000000000000,
+    "targetPrice": 0,
+    "priceAbove": false,
+    "imageUrl": "/sui.png",
+    "marketObjectId": "0x8a471a78a327f0ec0988896f275c9041beb81625ad5db7528c44905e2dae09fa",
+    "transactionDigest": "DbTzPSSTA1TCJvPVAmJFFP8AAqjbCLfEP1WL14XmWSXq"
+  }
+}

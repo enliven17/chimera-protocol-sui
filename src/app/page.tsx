@@ -3,8 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, BarChart3, Activity, Coins, Users } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import CountUp from "react-countup";
+import { getAllMarkets, Market } from "@/lib/sui-client";
+import { SuiMarketCard } from "@/components/SuiMarketCard";
 
 
 // Simple currency formatter
@@ -19,19 +21,37 @@ const formatCompactCurrency = (value: number) => {
 };
 
 export default function HomePage() {
-    // Mock stats for now - will be replaced with real Sui data
+    const [markets, setMarkets] = useState<Market[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Load markets on component mount
+    useEffect(() => {
+        const loadMarkets = async () => {
+            try {
+                setIsLoading(true);
+                const allMarkets = await getAllMarkets();
+                setMarkets(allMarkets);
+            } catch (err) {
+                console.error('Error loading markets:', err);
+                setError('Failed to load markets');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadMarkets();
+    }, []);
+
+    // Calculate platform stats from real data
     const platformStats = {
-        totalVolume: 0,
-        totalUsers: 0,
-        activeMarkets: 0,
-        totalMarkets: 0,
+        totalVolume: markets.reduce((sum, market) => sum + market.totalPool, 0),
+        totalUsers: new Set(markets.map(m => m.creator)).size,
+        activeMarkets: markets.filter(m => m.status === 0).length,
+        totalMarkets: markets.length,
     };
 
-    // Mock loading and error states
-    const marketsLoading = false;
-    const marketsError = null;
-    const featuredMarkets: any[] = [];
-    const allMarkets: any[] = [];
+    const featuredMarkets = markets.slice(0, 3); // Show first 3 markets as featured
 
 
 
@@ -209,15 +229,15 @@ export default function HomePage() {
                         </Button>
                     </div>
 
-                    {marketsLoading ? (
+                    {isLoading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[...Array(6)].map((_, i) => (
+                            {[...Array(3)].map((_, i) => (
                                 <div key={i} className="animate-pulse">
                                     <div className="bg-[#1A1F2C] rounded-lg h-64"></div>
                                 </div>
                             ))}
                         </div>
-                    ) : marketsError ? (
+                    ) : error ? (
                         <div className="text-center py-12 bg-[#1A1F2C] rounded-lg">
                             <div className="text-gray-400 mb-4">
                                 <TrendingUp className="h-12 w-12 mx-auto" />
@@ -225,7 +245,7 @@ export default function HomePage() {
                             <h3 className="text-lg font-medium text-white mb-2">
                                 Unable to load markets
                             </h3>
-                            <p className="text-gray-400 mb-2">{marketsError}</p>
+                            <p className="text-gray-400 mb-2">{error}</p>
                             <p className="text-xs text-gray-500 mb-4">
                                 Check console for contract debugging info
                             </p>
@@ -246,29 +266,29 @@ export default function HomePage() {
                                 No active markets found
                             </h3>
                             <p className="text-gray-400 mb-4">
-                                {allMarkets.length === 0
-                                    ? "No markets are currently available. Check back soon for new prediction markets!"
-                                    : "All markets are currently inactive or resolved. Check back soon for new markets!"}
+                                No markets are currently available. Check back soon for new prediction markets!
                             </p>
-                            {/* Create market button removed - admin only access via /dashboard/create */}
                         </div>
                     ) : (
-                        <div className="text-center py-12 bg-[#1A1F2C] rounded-lg">
-                            <div className="text-gray-400 mb-4">
-                                <TrendingUp className="h-12 w-12 mx-auto" />
-                            </div>
-                            <h3 className="text-lg font-medium text-white mb-2">
-                                Coming Soon
-                            </h3>
-                            <p className="text-gray-400 mb-4">
-                                Featured markets will appear here once they are created on Sui blockchain.
-                            </p>
-                            <Button
-                                asChild
-                                className="bg-[#4DA6FF] hover:bg-[#3B82F6] text-white"
-                            >
-                                <Link href="/markets">Go to Markets</Link>
-                            </Button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {featuredMarkets.map((market) => (
+                                <SuiMarketCard 
+                                    key={market.id} 
+                                    market={market} 
+                                    onUpdate={() => {
+                                        // Reload markets when updated
+                                        const loadMarkets = async () => {
+                                            try {
+                                                const allMarkets = await getAllMarkets();
+                                                setMarkets(allMarkets);
+                                            } catch (err) {
+                                                console.error('Error reloading markets:', err);
+                                            }
+                                        };
+                                        loadMarkets();
+                                    }}
+                                />
+                            ))}
                         </div>
                     )}
                 </div>

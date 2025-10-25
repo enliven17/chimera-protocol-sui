@@ -7,9 +7,9 @@ export const suiClient = new SuiClient({
 });
 
 // Contract addresses (will be updated after deployment)
-export const PACKAGE_ID = process.env.NEXT_PUBLIC_SUI_PACKAGE_ID || '';
-export const MARKET_REGISTRY_ID = process.env.NEXT_PUBLIC_SUI_MARKET_REGISTRY_ID || '';
-export const WALRUS_STORAGE_REGISTRY_ID = process.env.NEXT_PUBLIC_WALRUS_STORAGE_REGISTRY_ID || '';
+export const PACKAGE_ID = process.env.NEXT_PUBLIC_SUI_PACKAGE_ID || '0x0fc327ea3212fbd8ebddb035972a6cbfeb8919b8b04076fac79dcdd4afd57c22';
+export const MARKET_REGISTRY_ID = process.env.NEXT_PUBLIC_SUI_MARKET_REGISTRY_ID || '0xe1542fe2d6ada31db8a063dacb247483d7d722a335f99ba6e35c3babf3bce400';
+export const WALRUS_STORAGE_REGISTRY_ID = process.env.NEXT_PUBLIC_WALRUS_STORAGE_REGISTRY_ID || '0x62584cec3b2da7fdcdd7de82743fc5bd947b3d63bc7cd2dd5c3bf4975455074c';
 
 // Market types
 export const MARKET_TYPE_CUSTOM = 0;
@@ -293,9 +293,70 @@ export async function getUserPosition(marketId: string, userAddress: string): Pr
 // Get all markets (simplified - in practice you'd use events or indexing)
 export async function getAllMarkets(): Promise<Market[]> {
   try {
-    // This is a placeholder - in practice you'd query events or use an indexer
-    // For now, return empty array
-    return [];
+    // Get the registry object to find all markets
+    const registryObject = await suiClient.getObject({
+      id: MARKET_REGISTRY_ID,
+      options: {
+        showContent: true,
+        showType: true,
+      },
+    });
+
+    if (!registryObject.data || registryObject.data.content?.dataType !== 'moveObject') {
+      console.error('Registry object not found or invalid');
+      return [];
+    }
+
+    const registryData = registryObject.data.content.fields as any;
+    const markets: Market[] = [];
+
+    // Get all market objects from the registry
+    // Note: This is a simplified approach - in practice you'd need to iterate through the table
+    // For now, we'll try to get the market we just created
+    try {
+      const marketObject = await suiClient.getObject({
+        id: '0x8a471a78a327f0ec0988896f275c9041beb81625ad5db7528c44905e2dae09fa',
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      if (marketObject.data && marketObject.data.content?.dataType === 'moveObject') {
+        const marketData = marketObject.data.content.fields as any;
+        
+        const market: Market = {
+          id: marketObject.data.objectId,
+          marketId: parseInt(marketData.market_id),
+          title: marketData.title,
+          description: marketData.description,
+          optionA: marketData.option_a,
+          optionB: marketData.option_b,
+          category: parseInt(marketData.category),
+          creator: marketData.creator,
+          createdAt: parseInt(marketData.created_at),
+          endTime: parseInt(marketData.end_time),
+          minBet: parseInt(marketData.min_bet),
+          maxBet: parseInt(marketData.max_bet),
+          status: parseInt(marketData.status),
+          outcome: parseInt(marketData.outcome),
+          resolved: marketData.resolved,
+          totalOptionAShares: parseInt(marketData.total_option_a_shares),
+          totalOptionBShares: parseInt(marketData.total_option_b_shares),
+          totalPool: parseInt(marketData.total_pool?.fields?.value || '0'),
+          imageUrl: marketData.image_url,
+          marketType: parseInt(marketData.market_type),
+          targetPrice: parseInt(marketData.target_price),
+          priceAbove: marketData.price_above,
+        };
+
+        markets.push(market);
+      }
+    } catch (error) {
+      console.error('Error fetching market object:', error);
+    }
+
+    return markets;
   } catch (error) {
     console.error('Error fetching markets:', error);
     return [];

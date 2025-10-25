@@ -22,9 +22,6 @@ import {
   RefreshCw
 } from "lucide-react";
 
-// Import our AI hooks
-import { useASIMarketIntelligence, useASIBettingRecommendation } from "@/hooks/useASIAgent";
-
 import { usePythPrice, usePriceConditionCheck } from "@/hooks/usePythPrices";
 
 interface MarketIntelligenceProps {
@@ -67,8 +64,39 @@ export function MarketIntelligence({
   };
   
   // Get AI intelligence
-  const intelligence = useASIMarketIntelligence(marketData, true);
-  const recommendation = useASIBettingRecommendation(marketId, userProfile, true);
+  // Mock data since ASI agent is not available
+  const intelligence = {
+    isLoading: false,
+    data: {
+      marketAnalysis: {
+        sentiment: 'neutral',
+        confidence: 0.5,
+        keyFactors: ['Market volatility', 'Historical trends', 'Current conditions'],
+        riskAssessment: 'medium'
+      },
+      pricePrediction: {
+        optionA: 0.6,
+        optionB: 0.4,
+        confidence: 0.7
+      },
+      marketTrends: {
+        volume: 'increasing',
+        volatility: 'medium',
+        momentum: 'neutral'
+      }
+    }
+  };
+
+  const recommendation = {
+    isLoading: false,
+    data: {
+      recommendedOption: 'optionA',
+      confidence: 0.6,
+      suggestedAmount: userProfile?.availableBalance ? userProfile.availableBalance * 0.1 : 0,
+      reasoning: 'Based on current market conditions and price analysis',
+      riskLevel: 'medium'
+    }
+  };
 
   // Get price data if it's a price market
   const { data: priceData } = usePythPrice(

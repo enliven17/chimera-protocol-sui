@@ -16,8 +16,6 @@ import {
 
 // Import our hooks
 import { useCryptoPrices } from "@/hooks/usePythPrices";
-import { useASIAgentStatus, useASIPerformanceMetrics } from "@/hooks/useASIAgent";
-import { ASIChat } from "@/components/agents/asi-chat";
 
 import { usePYUSDBridgeDashboard } from "@/hooks/usePYUSDBridge";
 import { useAccount } from "wagmi";
@@ -27,8 +25,19 @@ export function SystemDashboard() {
 
   // Data hooks
   const { data: cryptoPrices, isLoading: pricesLoading } = useCryptoPrices();
-  const { data: asiStatus } = useASIAgentStatus();
-  const { data: asiPerformance } = useASIPerformanceMetrics();
+  // Mock data since ASI agent is not available
+  const asiStatus = {
+    isOnline: false,
+    lastUpdate: new Date().toISOString(),
+    status: 'offline'
+  };
+  
+  const asiPerformance = {
+    totalTrades: 0,
+    successRate: 0,
+    profitLoss: 0,
+    activeMarkets: 0
+  };
 
   // Blockchain analytics removed - use direct contract calls instead
   const bridgeDashboard = usePYUSDBridgeDashboard(address);
@@ -318,7 +327,24 @@ export function SystemDashboard() {
       </Card>
 
       {/* ASI Agent Chat */}
-      <ASIChat className="w-full" />
+      {/* AI Agent Status */}
+      <Card className="bg-gradient-to-br from-[#1A1F2C] to-[#151923] border-gray-800/50">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-white">
+            <Bot className="h-5 w-5 text-blue-400" />
+            <span>AI Agent Status</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <Bot className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-400 mb-2">AI Agent Offline</h3>
+            <p className="text-sm text-gray-500">
+              AI agent services are currently unavailable
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

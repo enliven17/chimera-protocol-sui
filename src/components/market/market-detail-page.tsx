@@ -1,6 +1,7 @@
 "use client";
 
 import { BetDialog } from "@/components/market/bet-dialog";
+import { SuiBetDialog } from "@/components/market/sui-bet-dialog";
 import { CommentsSection } from "@/components/comments/comments-section";
 import { CountdownTimer } from "@/components/market/countdown-timer";
 import { MarketError } from "@/components/market/market-error";
@@ -13,12 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useChimeraProtocol } from "@/hooks/useChimeraProtocol";
-import { useDirectContract } from "@/hooks/useDirectContract";
-import { usePythPrice } from "@/hooks/usePythPrices";
-import { PYTH_PRICE_IDS } from "@/lib/pyth-client";
+import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { useCurrentAccount } from "@mysten/dapp-kit";
+import { Market } from "@/lib/sui-client";
 import { OwnerOnly } from "@/components/auth/owner-only";
-import { useAccount } from "wagmi";
 import { MarketStatus } from "@/types/market";
 import {
   Bookmark,
@@ -43,38 +42,66 @@ import { useEffect, useState } from "react";
 export default function MarketDetailPage() {
   const params = useParams();
   const marketId = params.id as string;
-  const { address } = useAccount();
+  const currentAccount = useCurrentAccount();
 
-  // Use direct contract calls
-  const { getMarket } = useDirectContract();
-  const [market, setMarket] = useState<any>(null);
+  // Sui client
+  const suiClient = new SuiClient({
+    url: getFullnodeUrl('testnet'),
+  });
+
+  const [market, setMarket] = useState<Market | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Get live BTC price for BTC markets
-  const { data: btcPrice, isLoading: btcPriceLoading } = usePythPrice(
-    PYTH_PRICE_IDS.BTC_USD,
-    market?.title?.toLowerCase().includes('bitcoin') || market?.title?.toLowerCase().includes('btc')
-  );
-
-  // Get live ETH price for ETH markets
-  const { data: ethPrice, isLoading: ethPriceLoading } = usePythPrice(
-    PYTH_PRICE_IDS.ETH_USD,
-    market?.title?.toLowerCase().includes('ethereum') || market?.title?.toLowerCase().includes('eth')
-  );
   
   const fetchMarket = async () => {
     try {
       setLoading(true);
-      const marketData = await getMarket(marketId);
-      if (marketData) {
-        setMarket(marketData);
+      
+      // Get market object from Sui
+      const marketObject = await suiClient.getObject({
+        id: marketId,
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      if (marketObject.data && marketObject.data.content?.dataType === 'moveObject') {
+        const marketData = marketObject.data.content.fields as any;
+        
+        const market: Market = {
+          id: marketObject.data.objectId,
+          marketId: parseInt(marketData.market_id),
+          title: marketData.title,
+          description: marketData.description,
+          optionA: marketData.option_a,
+          optionB: marketData.option_b,
+          category: parseInt(marketData.category),
+          creator: marketData.creator,
+          createdAt: parseInt(marketData.created_at),
+          endTime: parseInt(marketData.end_time),
+          minBet: parseInt(marketData.min_bet),
+          maxBet: parseInt(marketData.max_bet),
+          status: parseInt(marketData.status),
+          outcome: parseInt(marketData.outcome),
+          resolved: marketData.resolved,
+          totalOptionAShares: parseInt(marketData.total_option_a_shares),
+          totalOptionBShares: parseInt(marketData.total_option_b_shares),
+          totalPool: parseInt(marketData.total_pool?.fields?.value || '0'),
+          imageUrl: marketData.image_url,
+          marketType: parseInt(marketData.market_type),
+          targetPrice: parseInt(marketData.target_price),
+          priceAbove: marketData.price_above,
+        };
+
+        setMarket(market);
         setError(null);
       } else {
         setError('Market not found');
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error fetching market:', err);
+      setError(err.message || 'Failed to load market');
     } finally {
       setLoading(false);
     }
@@ -84,9 +111,9 @@ export default function MarketDetailPage() {
     fetchMarket();
   }, [marketId]);
 
-  const trades: any[] = []; // Would come from contract events
-  const comments: any[] = []; // Comments would come from a separate system
-  const userPosition = null; // Would need wallet connection
+  const trades: any[] = []; // Would come from Sui contract events
+  const comments: any[] = []; // Comments would come from Walrus storage
+  const userPosition = null; // Would need Sui wallet connection
 
   const [betDialogOpen, setBetDialogOpen] = useState(false);
   const [selectedSide, setSelectedSide] = useState<"optionA" | "optionB">("optionA");
@@ -136,20 +163,20 @@ export default function MarketDetailPage() {
   // Compute the actual display status based on contract status and end time
   const getActualMarketStatus = () => {
     const now = Date.now();
-    const endTime = parseInt(market.endTime) * 1000;
+    const endTime = market.endTime; // Sui uses milliseconds directly
 
     // If resolved, always show resolved
-    if (market.status === MarketStatus.Resolved || market.resolved) {
+    if (market.status === 2 || market.resolved) { // MARKET_RESOLVED = 2
       return MarketStatus.Resolved;
     }
 
     // If past end time but not resolved, it's pending resolution
-    if (endTime <= now && market.status === MarketStatus.Active) {
+    if (endTime <= now && market.status === 0) { // MARKET_ACTIVE = 0
       return MarketStatus.Paused; // Using Paused to represent "Pending Resolution"
     }
 
     // Otherwise use contract status
-    return market.status;
+    return market.status === 0 ? MarketStatus.Active : MarketStatus.Paused;
   };
 
   const actualStatus = getActualMarketStatus();
@@ -157,7 +184,7 @@ export default function MarketDetailPage() {
   // Check if market allows betting
   const isBettingDisabled =
     actualStatus !== MarketStatus.Active ||
-    (market.endTime && parseInt(market.endTime) * 1000 <= Date.now());
+    (market.endTime && market.endTime <= Date.now());
 
   const formatCurrency = (value: string | number) => {
     const num = typeof value === "string" ? parseFloat(value) : value;
@@ -395,7 +422,7 @@ export default function MarketDetailPage() {
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-yellow-400" />
               <span className="text-gray-400">
-                <CountdownTimer endTime={parseInt(market.endTime) * 1000} />
+                <CountdownTimer endTime={market.endTime} />
               </span>
             </div>
 
@@ -700,12 +727,12 @@ export default function MarketDetailPage() {
                   </Badge>
                   {actualStatus === MarketStatus.Active && (
                     <div className="text-center bg-gray-800/30 rounded-lg p-4 text-white">
-                      <CountdownTimer endTime={parseInt(market.endTime) * 1000} />
+                      <CountdownTimer endTime={market.endTime} />
                     </div>
                   )}
                   
                   {/* Admin Controls - Show for admin if not resolved */}
-                  <OwnerOnly showFallback={false}>
+                  <OwnerOnly showFallback={false} marketCreator={market.creator}>
                     {!market.resolved && (
                       <div className="space-y-3 pt-4 border-t border-gray-800/50">
                         <h5 className="text-sm font-semibold text-gray-300 text-center">
@@ -743,7 +770,7 @@ export default function MarketDetailPage() {
       </div>
 
       {/* Bet Dialog */}
-      <BetDialog
+      <SuiBetDialog
         open={betDialogOpen}
         onOpenChange={setBetDialogOpen}
         marketId={market.id}
@@ -751,6 +778,8 @@ export default function MarketDetailPage() {
         selectedSide={selectedSide}
         optionA={market.optionA}
         optionB={market.optionB}
+        minBet={market.minBet}
+        maxBet={market.maxBet}
         onSuccess={handleBetSuccess}
       />
     </div>
