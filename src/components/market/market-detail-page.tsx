@@ -653,7 +653,7 @@ export default function MarketDetailPage() {
                 <TabsContent value="my-bets" className="mt-4">
                   <MyBets
                     marketId={market.id}
-                    userAddress={address || ""}
+                    userAddress={currentAccount?.address || ""}
                     showAllBets={false}
                   />
                 </TabsContent>
@@ -688,7 +688,7 @@ export default function MarketDetailPage() {
                   <CommentsSection
                     marketId={parseInt(market.id)}
                     marketTitle={market.title}
-                    currentUserAddress={address || ""}
+                    currentUserAddress={currentAccount?.address || ""}
                   />
                 </TabsContent>
               </Tabs>

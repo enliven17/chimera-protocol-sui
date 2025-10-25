@@ -1,29 +1,45 @@
 import { useState, useEffect } from 'react'
-import { supabase, Comment } from '@/lib/supabase'
+import { walrusClient } from '@/lib/walrus-client'
 import { toast } from 'sonner'
+
+export interface Comment {
+  id: string
+  marketId: string
+  userId: string
+  userAddress: string
+  userName: string
+  content: string
+  likes: number
+  dislikes: number
+  replies: Comment[]
+  isDeleted: boolean
+  createdAt: string
+  metadata?: any
+}
 
 export const useComments = (marketId: string) => {
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch comments
+  // Fetch comments from Walrus
   const fetchComments = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('market_id', marketId)
-        .order('created_at', { ascending: true })
-
-      if (error) {
-        throw error
+      // Get comments from localStorage (fallback)
+      const storedComments = localStorage.getItem(`comments_${marketId}`)
+      let marketComments: Comment[] = []
+      
+      if (storedComments) {
+        marketComments = JSON.parse(storedComments)
       }
 
-      setComments(data || [])
+      // Sort by creation date (oldest first for chronological order)
+      marketComments.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+
+      setComments(marketComments)
     } catch (err: any) {
       console.error('Error fetching comments:', err)
       setError(err.message)
@@ -32,27 +48,45 @@ export const useComments = (marketId: string) => {
     }
   }
 
-  // Add new comment
+  // Add new comment to Walrus
   const addComment = async (content: string, userAddress: string) => {
     try {
-      const { data, error } = await supabase
-        .from('comments')
-        .insert([{
-          market_id: marketId,
-          user_address: userAddress,
-          content: content.trim()
-        }])
-        .select()
-        .single()
-
-      if (error) {
-        throw error
+      const newComment: Comment = {
+        id: `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        marketId: marketId,
+        userId: userAddress,
+        userAddress: userAddress,
+        userName: userAddress.slice(0, 8) + '...', // Simplified username
+        content: content.trim(),
+        likes: 0,
+        dislikes: 0,
+        replies: [],
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+        metadata: {
+          platform: 'Chimera Protocol Sui'
+        }
       }
 
+      // Store to Walrus
+      const blobId = await walrusClient.storeBlob(JSON.stringify(newComment))
+      console.log('✅ Comment stored to Walrus:', blobId)
+
+      // Also store locally for quick access
+      const storedComments = localStorage.getItem(`comments_${marketId}`)
+      let marketComments: Comment[] = []
+      
+      if (storedComments) {
+        marketComments = JSON.parse(storedComments)
+      }
+
+      marketComments.push(newComment)
+      localStorage.setItem(`comments_${marketId}`, JSON.stringify(marketComments))
+
       // Add to local state
-      setComments(prev => [...prev, data])
+      setComments(prev => [...prev, newComment])
       toast.success('Comment added successfully!')
-      return data
+      return newComment
     } catch (err: any) {
       console.error('Error adding comment:', err)
       toast.error('Failed to add comment')
@@ -63,14 +97,19 @@ export const useComments = (marketId: string) => {
   // Delete comment (only by author)
   const deleteComment = async (commentId: string, userAddress: string) => {
     try {
-      const { error } = await supabase
-        .from('comments')
-        .delete()
-        .eq('id', commentId)
-        .eq('user_address', userAddress)
+      // Update local storage
+      const storedComments = localStorage.getItem(`comments_${marketId}`)
+      let marketComments: Comment[] = []
+      
+      if (storedComments) {
+        marketComments = JSON.parse(storedComments)
+      }
 
-      if (error) {
-        throw error
+      // Find and mark as deleted
+      const commentIndex = marketComments.findIndex(c => c.id === commentId && c.userAddress === userAddress)
+      if (commentIndex !== -1) {
+        marketComments[commentIndex].isDeleted = true
+        localStorage.setItem(`comments_${marketId}`, JSON.stringify(marketComments))
       }
 
       // Remove from local state

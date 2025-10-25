@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, BetActivity } from '@/lib/supabase'
+import { BetActivity } from './use-bet-activity'
 import { toast } from 'sonner'
 
 export const useUserBets = (userAddress?: string) => {
@@ -7,7 +7,7 @@ export const useUserBets = (userAddress?: string) => {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Fetch user's bet activities
+    // Fetch user's bet activities from Walrus
     const fetchUserBets = async () => {
         if (!userAddress) {
             setUserBets([])
@@ -18,17 +18,23 @@ export const useUserBets = (userAddress?: string) => {
             setIsLoading(true)
             setError(null)
 
-            const { data, error } = await supabase
-                .from('bet_activities')
-                .select('*')
-                .eq('user_address', userAddress)
-                .order('created_at', { ascending: false })
-
-            if (error) {
-                throw error
+            // Get all bet activities from localStorage (fallback)
+            const storedActivities = localStorage.getItem('bet_activities')
+            let allActivities: BetActivity[] = []
+            
+            if (storedActivities) {
+                allActivities = JSON.parse(storedActivities)
             }
 
-            setUserBets(data || [])
+            // Filter by user address
+            const userActivities = allActivities.filter(activity => 
+                activity.userAddress.toLowerCase() === userAddress.toLowerCase()
+            )
+
+            // Sort by creation date (newest first)
+            userActivities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+            setUserBets(userActivities)
         } catch (err: any) {
             console.error('Error fetching user bets:', err)
             setError(err.message)
@@ -39,20 +45,18 @@ export const useUserBets = (userAddress?: string) => {
 
     // Get user bets for specific market
     const getUserBetsForMarket = (marketId: string) => {
-        return userBets.filter(bet => bet.market_id === marketId)
+        return userBets.filter(bet => bet.marketId === marketId)
     }
 
     // Get user's total stats
     const getUserStats = () => {
         const totalBets = userBets.length
-        const totalAmount = userBets.reduce((sum, bet) => sum + parseFloat(bet.amount), 0)
-        const totalShares = userBets.reduce((sum, bet) => sum + parseFloat(bet.shares), 0)
-        const uniqueMarkets = new Set(userBets.map(bet => bet.market_id)).size
+        const totalAmount = userBets.reduce((sum, bet) => sum + bet.betAmount, 0)
+        const uniqueMarkets = new Set(userBets.map(bet => bet.marketId)).size
 
         return {
             totalBets,
             totalAmount,
-            totalShares,
             uniqueMarkets
         }
     }

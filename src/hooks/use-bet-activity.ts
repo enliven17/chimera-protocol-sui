@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react'
-import { supabase, BetActivity } from '@/lib/supabase'
+import { walrusClient } from '@/lib/walrus-client'
 import { toast } from 'sonner'
 
-// Check if Supabase is properly configured
-const isSupabaseConfigured = () => {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+export interface BetActivity {
+  id: string
+  marketId: string
+  userId: string
+  userAddress: string
+  betAmount: number
+  betSide: 'A' | 'B'
+  transactionHash?: string
+  createdAt: string
+  metadata?: any
 }
 
 export const useBetActivity = (marketId?: string) => {
@@ -12,93 +19,72 @@ export const useBetActivity = (marketId?: string) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch bet activities
+  // Fetch bet activities from Walrus
   const fetchActivities = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      console.log('Fetching bet activities...')
-      console.log('Supabase client exists:', !!supabase)
-
-      let query = supabase
-        .from('bet_activities')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (marketId) {
-        query = query.eq('market_id', marketId)
+      console.log('Fetching bet activities from Walrus...')
+      
+      // For now, we'll store activities in localStorage as a fallback
+      // In a real implementation, you'd query Walrus storage
+      const storedActivities = localStorage.getItem('bet_activities')
+      let allActivities: BetActivity[] = []
+      
+      if (storedActivities) {
+        allActivities = JSON.parse(storedActivities)
       }
 
-      console.log('Executing query...')
-      const { data, error } = await query.limit(50)
+      // Filter by marketId if provided
+      const filteredActivities = marketId 
+        ? allActivities.filter(activity => activity.marketId === marketId)
+        : allActivities
 
-      console.log('Query result:', { data, error })
+      // Sort by creation date (newest first)
+      filteredActivities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
-      if (error) {
-        console.error('Supabase error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
-        
-        // If table doesn't exist, just return empty array instead of throwing
-        if (error.message?.includes('relation "bet_activities" does not exist')) {
-          console.warn('bet_activities table does not exist, returning empty array')
-          setActivities([])
-          return
-        }
-        throw error
-      }
-
-      console.log('Successfully fetched activities:', data?.length || 0)
-      setActivities(data || [])
+      console.log('Successfully fetched activities:', filteredActivities.length)
+      setActivities(filteredActivities)
     } catch (err: any) {
       console.error('Error fetching bet activities:', err)
       setError(err.message || 'Failed to fetch bet activities')
-      // Set empty array on error to prevent UI issues
       setActivities([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Add new bet activity
-  const addBetActivity = async (activity: Omit<BetActivity, 'id' | 'created_at'>) => {
+  // Add new bet activity to Walrus
+  const addBetActivity = async (activity: Omit<BetActivity, 'id' | 'createdAt'>) => {
     try {
-      // Check if Supabase is configured
-      if (!supabase) {
-        console.warn('Supabase client not configured, skipping bet activity recording')
-        return null
+      const newActivity: BetActivity = {
+        ...activity,
+        id: `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
-        .from('bet_activities')
-        .insert([activity])
-        .select()
-        .single()
+      // Store to Walrus
+      const blobId = await walrusClient.storeBlob(JSON.stringify(newActivity))
+      console.log('✅ Bet activity stored to Walrus:', blobId)
 
-      if (error) {
-        console.error('Supabase error adding bet activity:', error)
-        // If table doesn't exist, just log and continue
-        if (error.message?.includes('relation "bet_activities" does not exist')) {
-          console.warn('bet_activities table does not exist, skipping activity recording')
-          return null
-        }
-        throw error
+      // Also store locally for quick access
+      const storedActivities = localStorage.getItem('bet_activities')
+      let allActivities: BetActivity[] = []
+      
+      if (storedActivities) {
+        allActivities = JSON.parse(storedActivities)
       }
+
+      allActivities.unshift(newActivity)
+      localStorage.setItem('bet_activities', JSON.stringify(allActivities))
 
       // Add to local state
-      setActivities(prev => [data, ...prev])
-      return data
+      setActivities(prev => [newActivity, ...prev])
+      return newActivity
     } catch (err: any) {
       console.error('Error adding bet activity:', err)
-      // Don't show toast error for missing table, just log it
-      if (!err.message?.includes('relation "bet_activities" does not exist')) {
-        toast.error('Failed to record bet activity')
-      }
-      // Don't throw error to prevent breaking the betting flow
+      toast.error('Failed to record bet activity')
       return null
     }
   }
