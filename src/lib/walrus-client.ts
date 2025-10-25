@@ -388,5 +388,5 @@ export class WalrusClient {
   }
 }
 
-// Singleton instance - NO MOCK MODE, real Walrus storage only
-export const walrusClient = new WalrusClient(false);
+// Singleton instance - MOCK MODE for testing when Walrus HTTP API is down
+export const walrusClient = new WalrusClient(true);

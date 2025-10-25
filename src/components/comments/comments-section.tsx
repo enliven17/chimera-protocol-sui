@@ -152,19 +152,19 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-gradient-to-r from-[#eab308] to-[#ca8a04] rounded-full flex items-center justify-center text-white text-sm font-bold">
-                        {comment.user_address.slice(2, 4).toUpperCase()}
+                        {comment.userAddress?.slice(2, 4).toUpperCase() || '??'}
                       </div>
                       <div>
                         <span className="text-white font-medium">
-                          {formatAddress(comment.user_address)}
+                          {comment.userAddress ? formatAddress(comment.userAddress) : 'Unknown User'}
                         </span>
                         <span className="text-gray-400 text-sm ml-2">
-                          {formatTimeAgo(comment.created_at)}
+                          {formatTimeAgo(comment.createdAt)}
                         </span>
                       </div>
                     </div>
                     
-                    {comment.user_address.toLowerCase() === currentUserAddress.toLowerCase() && (
+                    {comment.userAddress?.toLowerCase() === currentUserAddress.toLowerCase() && (
                       <Button
                         variant="ghost"
                         size="sm"

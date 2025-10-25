@@ -175,3 +175,4 @@ export class MarketWalrusStorage {
 
 // Singleton instance
 export const marketWalrusStorage = new MarketWalrusStorage();
+

@@ -218,3 +218,4 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
     </Dialog>
   );
 };
+
