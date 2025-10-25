@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Header } from "@/components/shared/header";
 import { TermsGuard } from "@/components/shared/terms-guard";
 import { SuiWalletProvider } from "@/providers/SuiWalletProvider";
+import { ZkLoginProvider } from "@/providers/ZkLoginProvider";
 import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import '@mysten/dapp-kit/dist/index.css';
@@ -71,17 +72,19 @@ export default async function RootLayout({
         className={`${bricolage.className} bg-gradient-to-r from-[#0A0C14] via-[#1A1F2C] to-[#0A0C14]`}
       >
         <ErrorBoundary>
-          <SuiWalletProvider>
-            <div className="min-h-screen flex flex-col bg-gradient-to-r from-[#0A0C14] via-[#1A1F2C] to-[#0A0C14] text-white relative">
-              <TermsGuard>
-                <Header />
-                <main className="flex-1">{children}</main>
-                {pathname === "/" && <Footer />}
-              </TermsGuard>
-              <FloatingChatbot />
-            </div>
-            <Toaster theme="dark" position="top-right" />
-          </SuiWalletProvider>
+          <ZkLoginProvider>
+            <SuiWalletProvider>
+              <div className="min-h-screen flex flex-col bg-gradient-to-r from-[#0A0C14] via-[#1A1F2C] to-[#0A0C14] text-white relative">
+                <TermsGuard>
+                  <Header />
+                  <main className="flex-1">{children}</main>
+                  {pathname === "/" && <Footer />}
+                </TermsGuard>
+                <FloatingChatbot />
+              </div>
+              <Toaster theme="dark" position="top-right" />
+            </SuiWalletProvider>
+          </ZkLoginProvider>
         </ErrorBoundary>
       </body>
     </html>

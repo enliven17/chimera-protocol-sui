@@ -1,6 +1,6 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Market-related type definitions aligned with ChimeraAI contract
+// Market-related type definitions aligned with SuimeraAI contract
 export interface Market {
   id: string;
   title: string;

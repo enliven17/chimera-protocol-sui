@@ -9,6 +9,7 @@ export const suiClient = new SuiClient({
 // Contract addresses (will be updated after deployment)
 export const PACKAGE_ID = process.env.NEXT_PUBLIC_SUI_PACKAGE_ID || '';
 export const MARKET_REGISTRY_ID = process.env.NEXT_PUBLIC_SUI_MARKET_REGISTRY_ID || '';
+export const WALRUS_STORAGE_REGISTRY_ID = process.env.NEXT_PUBLIC_WALRUS_STORAGE_REGISTRY_ID || '';
 
 // Market types
 export const MARKET_TYPE_CUSTOM = 0;
@@ -49,6 +50,21 @@ export interface UserPosition {
   optionBShares: number;
   totalInvested: number;
   claimed: boolean;
+}
+
+export interface WalrusStorageRecord {
+  blobId: string;
+  owner: string;
+  dataType: number;
+  sizeBytes: number;
+  timestamp: number;
+  metadata: string;
+  costPaid: number;
+}
+
+export interface WalrusStorageStats {
+  totalBlobs: number;
+  totalStorage: number;
 }
 
 // Create a new market
@@ -283,5 +299,280 @@ export async function getAllMarkets(): Promise<Market[]> {
   } catch (error) {
     console.error('Error fetching markets:', error);
     return [];
+  }
+}
+
+// === Walrus Storage Functions ===
+
+// Data type constants
+export const WALRUS_DATA_TYPES = {
+  CHAT_HISTORY: 1,
+  BET_HISTORY: 2,
+  MARKET_ANALYSIS: 3,
+};
+
+// Calculate storage cost for Walrus
+export async function calculateWalrusStorageCost(sizeBytes: number): Promise<number> {
+  try {
+    const tx = new TransactionBlock();
+    
+    tx.moveCall({
+      target: `${PACKAGE_ID}::walrus_storage::calculate_storage_cost`,
+      arguments: [
+        tx.pure(sizeBytes),
+      ],
+    });
+
+    const result = await suiClient.devInspectTransactionBlock({
+      transactionBlock: tx,
+      sender: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    });
+
+    if (result.results?.[0]?.returnValues?.[0]) {
+      const [costBytes] = result.results[0].returnValues[0];
+      return parseInt(costBytes.toString());
+    }
+    
+    return 100000; // Default minimum cost
+  } catch (error) {
+    console.error('Error calculating storage cost:', error);
+    return 100000; // Default minimum cost
+  }
+}
+
+// Store blob reference on-chain
+export async function storeWalrusBlob(
+  blobId: string,
+  dataType: number,
+  sizeBytes: number,
+  metadata: string,
+  paymentAmount: number,
+  signer: any
+) {
+  const tx = new TransactionBlock();
+  
+  // Split coin for payment
+  const [coin] = tx.splitCoins(tx.gas, [tx.pure(paymentAmount)]);
+  
+  tx.moveCall({
+    target: `${PACKAGE_ID}::walrus_storage::store_blob`,
+    arguments: [
+      tx.object(WALRUS_STORAGE_REGISTRY_ID),
+      tx.pure(Array.from(new TextEncoder().encode(blobId))),
+      tx.pure(dataType),
+      tx.pure(sizeBytes),
+      tx.pure(Array.from(new TextEncoder().encode(metadata))),
+      coin,
+      tx.object('0x6'), // Clock object
+    ],
+  });
+
+  return new Promise((resolve, reject) => {
+    signer({
+      transactionBlock: tx,
+      options: {
+        showEffects: true,
+        showObjectChanges: true,
+        showEvents: true,
+      },
+    }, {
+      onSuccess: (result: any) => resolve(result),
+      onError: (error: any) => reject(error),
+    });
+  });
+}
+
+// Store chat messages on Walrus
+export async function storeWalrusChatMessages(
+  blobId: string,
+  messagesCount: number,
+  totalSize: number,
+  userAddress: string,
+  paymentAmount: number,
+  signer: any
+) {
+  const tx = new TransactionBlock();
+  
+  // Split coin for payment
+  const [coin] = tx.splitCoins(tx.gas, [tx.pure(paymentAmount)]);
+  
+  tx.moveCall({
+    target: `${PACKAGE_ID}::walrus_storage::store_chat_messages`,
+    arguments: [
+      tx.object(WALRUS_STORAGE_REGISTRY_ID),
+      tx.pure(Array.from(new TextEncoder().encode(blobId))),
+      tx.pure(messagesCount),
+      tx.pure(totalSize),
+      tx.pure(Array.from(new TextEncoder().encode(userAddress))),
+      coin,
+      tx.object('0x6'), // Clock object
+    ],
+  });
+
+  return new Promise((resolve, reject) => {
+    signer({
+      transactionBlock: tx,
+      options: {
+        showEffects: true,
+        showObjectChanges: true,
+        showEvents: true,
+      },
+    }, {
+      onSuccess: (result: any) => resolve(result),
+      onError: (error: any) => reject(error),
+    });
+  });
+}
+
+// Store bet history on Walrus
+export async function storeWalrusBetHistory(
+  blobId: string,
+  betsCount: number,
+  totalSize: number,
+  userAddress: string,
+  paymentAmount: number,
+  signer: any
+) {
+  const tx = new TransactionBlock();
+  
+  // Split coin for payment
+  const [coin] = tx.splitCoins(tx.gas, [tx.pure(paymentAmount)]);
+  
+  tx.moveCall({
+    target: `${PACKAGE_ID}::walrus_storage::store_bet_history`,
+    arguments: [
+      tx.object(WALRUS_STORAGE_REGISTRY_ID),
+      tx.pure(Array.from(new TextEncoder().encode(blobId))),
+      tx.pure(betsCount),
+      tx.pure(totalSize),
+      tx.pure(Array.from(new TextEncoder().encode(userAddress))),
+      coin,
+      tx.object('0x6'), // Clock object
+    ],
+  });
+
+  return new Promise((resolve, reject) => {
+    signer({
+      transactionBlock: tx,
+      options: {
+        showEffects: true,
+        showObjectChanges: true,
+        showEvents: true,
+      },
+    }, {
+      onSuccess: (result: any) => resolve(result),
+      onError: (error: any) => reject(error),
+    });
+  });
+}
+
+// Get blob information from registry
+export async function getWalrusBlobInfo(blobId: string, signer: any): Promise<WalrusStorageRecord | null> {
+  try {
+    const tx = new TransactionBlock();
+    
+    tx.moveCall({
+      target: `${PACKAGE_ID}::walrus_storage::get_blob_info`,
+      arguments: [
+        tx.object(WALRUS_STORAGE_REGISTRY_ID),
+        tx.pure(Array.from(new TextEncoder().encode(blobId))),
+        tx.object('0x6'), // Clock object
+      ],
+    });
+
+    const result = await new Promise<any>((resolve, reject) => {
+      signer({
+        transactionBlock: tx,
+        options: {
+          showEffects: true,
+          showEvents: true,
+        },
+      }, {
+        onSuccess: (result: any) => resolve(result),
+        onError: (error: any) => reject(error),
+      });
+    });
+
+    // Parse the result from transaction effects
+    if (result.effects?.status?.status === 'success') {
+      // In a real implementation, you'd parse the return values
+      // For now, return a placeholder
+      return {
+        blobId,
+        owner: '',
+        dataType: 0,
+        sizeBytes: 0,
+        timestamp: 0,
+        metadata: '',
+        costPaid: 0,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting blob info:', error);
+    return null;
+  }
+}
+
+// Check if blob exists in registry
+export async function walrusBlobExists(blobId: string): Promise<boolean> {
+  try {
+    const tx = new TransactionBlock();
+    
+    tx.moveCall({
+      target: `${PACKAGE_ID}::walrus_storage::blob_exists`,
+      arguments: [
+        tx.object(WALRUS_STORAGE_REGISTRY_ID),
+        tx.pure(Array.from(new TextEncoder().encode(blobId))),
+      ],
+    });
+
+    const result = await suiClient.devInspectTransactionBlock({
+      transactionBlock: tx,
+      sender: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    });
+
+    if (result.results?.[0]?.returnValues?.[0]) {
+      const [existsBytes] = result.results[0].returnValues[0];
+      return existsBytes[0] === 1;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking blob existence:', error);
+    return false;
+  }
+}
+
+// Get registry statistics
+export async function getWalrusRegistryStats(): Promise<WalrusStorageStats> {
+  try {
+    const tx = new TransactionBlock();
+    
+    tx.moveCall({
+      target: `${PACKAGE_ID}::walrus_storage::get_registry_stats`,
+      arguments: [
+        tx.object(WALRUS_STORAGE_REGISTRY_ID),
+      ],
+    });
+
+    const result = await suiClient.devInspectTransactionBlock({
+      transactionBlock: tx,
+      sender: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    });
+
+    if (result.results?.[0]?.returnValues) {
+      const [totalBlobsBytes, totalStorageBytes] = result.results[0].returnValues;
+      return {
+        totalBlobs: parseInt(totalBlobsBytes.toString()),
+        totalStorage: parseInt(totalStorageBytes.toString()),
+      };
+    }
+    
+    return { totalBlobs: 0, totalStorage: 0 };
+  } catch (error) {
+    console.error('Error getting registry stats:', error);
+    return { totalBlobs: 0, totalStorage: 0 };
   }
 }

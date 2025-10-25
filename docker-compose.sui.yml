@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  sui-cli:
+    image: mysten/sui-tools:testnet
+    volumes:
+      - ./sui_contracts:/workspace/sui_contracts
+      - ./deployments:/workspace/deployments
+      - sui-config:/root/.sui
+    working_dir: /workspace
+    environment:
+      - SUI_NETWORK=testnet
+    command: tail -f /dev/null
+
+volumes:
+  sui-config:

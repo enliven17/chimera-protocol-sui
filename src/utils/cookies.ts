@@ -1,5 +1,5 @@
 ﻿/**
- * Cookie utilities for ChimeraAI app
+ * Cookie utilities for SuimeraAI app
  */
 
 export const setCookie = (name: string, value: string, days: number = 365): void => {

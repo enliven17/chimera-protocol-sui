@@ -555,7 +555,7 @@ export function CreateMarketForm({ onSubmit, isLoading: externalLoading = false 
                 <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-yellow-400">Important Notice</p>
-                  <p className="text-gray-400">Creating market on Hedera Testnet with ChimeraAI smart contract.</p>
+                  <p className="text-gray-400">Creating market on Hedera Testnet with SuimeraAI smart contract.</p>
                 </div>
               </div>
             </div>

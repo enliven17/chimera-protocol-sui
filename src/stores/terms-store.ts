@@ -50,8 +50,8 @@ export const useTermsStore = create<TermsState>()(
         set({ hasAcknowledgedRegion: true });
         // Store in localStorage as well
         if (typeof window !== 'undefined') {
-          localStorage.setItem("chimeraai-region-acknowledged", "true");
-          localStorage.setItem("chimeraai-region-country", get().countryCode || "");
+          localStorage.setItem("suimeraai-region-acknowledged", "true");
+          localStorage.setItem("suimeraai-region-country", get().countryCode || "");
         }
       },
       setLoadingRegion: (loading) => set({ isLoadingRegion: loading }),
@@ -67,13 +67,13 @@ export const useTermsStore = create<TermsState>()(
         });
         // Clear localStorage
         if (typeof window !== 'undefined') {
-          localStorage.removeItem("chimeraai-region-acknowledged");
-          localStorage.removeItem("chimeraai-region-country");
+          localStorage.removeItem("suimeraai-region-acknowledged");
+          localStorage.removeItem("suimeraai-region-country");
         }
       },
     }),
     {
-      name: "chimeraai-terms",
+      name: "suimeraai-terms",
       partialize: (state) => ({
         hasAcceptedTerms: state.hasAcceptedTerms,
         hasAcknowledgedRegion: state.hasAcknowledgedRegion,
@@ -90,8 +90,8 @@ export const checkPreviousRegionAcknowledgment = (): { acknowledged: boolean; co
     return { acknowledged: false };
   }
   
-  const acknowledged = localStorage.getItem("chimeraai-region-acknowledged") === "true";
-  const countryCode = localStorage.getItem("chimeraai-region-country") || undefined;
+  const acknowledged = localStorage.getItem("suimeraai-region-acknowledged") === "true";
+  const countryCode = localStorage.getItem("suimeraai-region-country") || undefined;
 
   return { acknowledged, countryCode };
 };

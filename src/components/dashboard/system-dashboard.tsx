@@ -44,7 +44,7 @@ export function SystemDashboard() {
         <div>
           <h1 className="text-3xl font-bold text-white">System Dashboard</h1>
           <p className="text-gray-400 mt-1">
-            Real-time monitoring of ChimeraAI ecosystem
+            Real-time monitoring of SuimeraAI ecosystem
           </p>
         </div>
         <Button
@@ -149,7 +149,7 @@ export function SystemDashboard() {
               <div>
                 <p className="text-white font-medium text-sm">Contract Status</p>
                 <p className="text-gray-400 text-xs">
-                  ChimeraProtocol • Active
+                  SuimeraProtocol • Active
                 </p>
               </div>
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
@@ -280,7 +280,7 @@ export function SystemDashboard() {
               </h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">ChimeraProtocol</span>
+                  <span className="text-gray-400 text-sm">SuimeraProtocol</span>
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                     Active
                   </Badge>

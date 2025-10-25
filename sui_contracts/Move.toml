@@ -8,3 +8,4 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 
 [addresses]
 chimera_prediction_market = "0x0"
+chimera_protocol = "0x0"

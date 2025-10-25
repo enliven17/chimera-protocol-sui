@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { SuiWalletButton } from "../SuiWalletButton";
+import { UnifiedWalletButton } from "../auth/UnifiedWalletButton";
 
 export function Header() {
   return (
@@ -11,42 +11,41 @@ export function Header() {
           {/* Subtle animated overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#FFE100]/5 via-transparent to-[#E6CC00]/5 animate-gradient opacity-50"></div>
           <div className="relative z-10 flex items-center justify-between gap-[20px]">
-            <div className="flex items-center space-x-8">
-              {/* Logo */}
-              <Link href="/" className="flex items-center gap-2">
-                {/* Text Only */}
-                <div className="sm:text-3xl text-xl font-black tracking-tight">
-                  <span className="bg-gradient-to-r from-[#FFE100] via-[#E6CC00] to-[#CCAA00] bg-clip-text text-transparent">
-                    Chi
-                  </span>
-                  <span className="text-white">mera</span>
-                </div>
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              {/* Text Only */}
+              <div className="sm:text-3xl text-xl font-black tracking-tight">
+                <span className="bg-gradient-to-r from-[#4DA6FF] via-[#60A5FA] to-[#3B82F6] bg-clip-text text-transparent animate-sui-gradient">
+                  Sui
+                </span>
+                <span className="text-white">mera</span>
+              </div>
+            </Link>
+            
+            {/* Navigation Links - Centered */}
+            <nav className="hidden md:flex items-center justify-center flex-1 space-x-8">
+              <Link 
+                href="/markets" 
+                className="text-gray-300 hover:text-[#4DA6FF] transition-colors text-sm font-medium"
+              >
+                Markets
               </Link>
-              
-              {/* Navigation Links */}
-              <nav className="hidden md:flex items-center space-x-6">
-                <Link 
-                  href="/markets" 
-                  className="text-gray-300 hover:text-[#4DA6FF] transition-colors text-sm font-medium"
-                >
-                  Markets
-                </Link>
-                <Link 
-                  href="/dashboard/my-bets" 
-                  className="text-gray-300 hover:text-white transition-colors text-sm font-medium"
-                >
-                  My Bets
-                </Link>
-                <Link 
-                  href="/learn" 
-                  className="text-gray-300 hover:text-white transition-colors text-sm font-medium"
-                >
-                  Learn
-                </Link>
-              </nav>
-            </div>
+              <Link 
+                href="/dashboard/my-bets" 
+                className="text-gray-300 hover:text-white transition-colors text-sm font-medium"
+              >
+                My Bets
+              </Link>
+              <Link 
+                href="/learn" 
+                className="text-gray-300 hover:text-white transition-colors text-sm font-medium"
+              >
+                Learn
+              </Link>
+            </nav>
+            
             {/* Wallet Button */}
-            <SuiWalletButton />
+            <UnifiedWalletButton />
           </div>
         </div>
       </div>

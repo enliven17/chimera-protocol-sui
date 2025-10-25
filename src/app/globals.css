@@ -141,3 +141,32 @@
   background-size: 200% 200%;
   animation: gradient-shift 8s ease-in-out infinite;
 }
+
+/* Sui text gradient animation */
+@keyframes sui-gradient {
+  0% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  25% { 
+    background-position: 100% 50%;
+    filter: hue-rotate(10deg) brightness(1.1);
+  }
+  50% { 
+    background-position: 100% 100%;
+    filter: hue-rotate(20deg) brightness(1.2);
+  }
+  75% { 
+    background-position: 0% 100%;
+    filter: hue-rotate(10deg) brightness(1.1);
+  }
+  100% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg) brightness(1);
+  }
+}
+
+.animate-sui-gradient {
+  background-size: 300% 300%;
+  animation: sui-gradient 6s ease-in-out infinite;
+}

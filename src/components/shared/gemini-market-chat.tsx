@@ -14,10 +14,15 @@ import {
   TrendingUp,
   BarChart3,
   Target,
-  Sparkles
+  Sparkles,
+  Save,
+  Download,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAllMarkets } from '@/lib/sui-client';
+import { useWalrusStorage } from '@/hooks/useWalrusStorage';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 
 interface ChatMessage {
   id: string;
@@ -38,6 +43,9 @@ interface GeminiMarketChatProps {
 }
 
 export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
+  const currentAccount = useCurrentAccount();
+  const walrusStorage = useWalrusStorage();
+  
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -48,6 +56,7 @@ export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [blobIdInput, setBlobIdInput] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -141,6 +150,44 @@ export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
     ]);
   };
 
+  // Save chat to Walrus
+  const saveChatToWalrus = async () => {
+    if (!currentAccount?.address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (messages.length <= 1) {
+      toast.error('No chat messages to save');
+      return;
+    }
+
+    try {
+      const blobId = await walrusStorage.storeChatMessages(messages, currentAccount.address);
+      if (blobId) {
+        console.log('Chat saved to Walrus with blob ID:', blobId);
+        toast.success(`Chat saved! Blob ID: ${blobId.substring(0, 8)}...`);
+      }
+    } catch (error) {
+      console.error('Failed to save chat:', error);
+      toast.error('Failed to save chat to Walrus');
+    }
+  };
+
+  // Load chat from Walrus
+  const loadChatFromWalrus = async () => {
+    if (!blobIdInput.trim()) {
+      toast.error('Please enter a blob ID');
+      return;
+    }
+
+    const loadedMessages = await walrusStorage.retrieveChatMessages(blobIdInput.trim());
+    if (loadedMessages) {
+      setMessages(loadedMessages);
+      setBlobIdInput('');
+    }
+  };
+
   const quickActions = [
     { label: 'Analyze Markets', message: 'analyze all available markets', icon: BarChart3 },
     { label: 'Best Opportunities', message: 'what are the best betting opportunities right now?', icon: Target },
@@ -179,6 +226,23 @@ export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
           <Badge className="bg-[#4DA6FF]/20 text-[#4DA6FF] border-[#4DA6FF]/30 text-xs">
             Gemini AI
           </Badge>
+          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+            Walrus
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={saveChatToWalrus}
+            disabled={walrusStorage.isLoading || !currentAccount?.address}
+            className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+            title="Save chat to Walrus"
+          >
+            {walrusStorage.isLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Save className="h-3 w-3" />
+            )}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -188,6 +252,33 @@ export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
             <RefreshCw className="h-3 w-3" />
           </Button>
         </div>
+      </div>
+
+      {/* Walrus Load Section */}
+      <div className="p-3 border-b border-gray-800/50 bg-gray-900/30">
+        <div className="flex items-center space-x-2">
+          <Input
+            value={blobIdInput}
+            onChange={(e) => setBlobIdInput(e.target.value)}
+            placeholder="Enter Walrus blob ID to load chat..."
+            className="flex-1 h-8 text-xs bg-gray-800/50 border-gray-700 text-white placeholder-gray-400"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadChatFromWalrus}
+            disabled={walrusStorage.isLoading || !blobIdInput.trim()}
+            className="h-8 px-3 text-xs border-gray-700 text-gray-300 hover:bg-gray-800"
+          >
+            <Upload className="h-3 w-3 mr-1" />
+            Load
+          </Button>
+        </div>
+        {walrusStorage.lastBlobId && (
+          <p className="text-xs text-gray-400 mt-2">
+            Last saved: {walrusStorage.lastBlobId}
+          </p>
+        )}
       </div>
 
       {/* Messages */}

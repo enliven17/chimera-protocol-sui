@@ -148,7 +148,7 @@ export function DefaultErrorFallback({
   const reportError = () => {
     const subject = `Error Report - ${errorId}`;
     const body = `Please describe what you were doing when this error occurred:\n\n\n\nError Details:\n${errorDetails}`;
-    const mailtoUrl = `mailto:support@chimeraai.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailtoUrl = `mailto:support@suimeraai.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoUrl);
   };
 

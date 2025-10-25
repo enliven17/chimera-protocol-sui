@@ -120,13 +120,13 @@ export function RegionRestrictionModal() {
           {/* Alternative Options */}
           <div className="text-center space-y-2">
             <p className="text-xs text-gray-400">
-              Need help accessing ChimeraAI from your region?
+              Need help accessing SuimeraAI from your region?
             </p>
             <Button
               variant="ghost"
               size="sm"
               className="text-[#9b87f5] hover:text-[#8b5cf6] hover:bg-[#9b87f5]/10 text-xs"
-              onClick={() => window.open('mailto:support@chimeraai.com', '_blank')}
+              onClick={() => window.open('mailto:support@suimeraai.com', '_blank')}
             >
               Contact Support
             </Button>

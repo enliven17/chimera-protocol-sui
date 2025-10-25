@@ -6,6 +6,7 @@ import Link from "next/link";
 import React from "react";
 import CountUp from "react-countup";
 
+
 // Simple currency formatter
 const formatCompactCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -172,6 +173,8 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
+
+
 
             {/* Featured Markets Section */}
             <section className="py-16 px-4">
