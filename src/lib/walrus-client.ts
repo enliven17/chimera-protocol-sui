@@ -1,13 +1,9 @@
 // Walrus configuration with multiple fallback endpoints
 const WALRUS_ENDPOINTS = {
   publishers: [
-    process.env.NEXT_PUBLIC_WALRUS_PUBLISHER_URL || 'https://publisher-devnet.walrus.space',
-    'https://walrus-testnet-publisher.nodes.guru',
     'https://publisher.walrus-testnet.walrus.space'
   ],
   aggregators: [
-    process.env.NEXT_PUBLIC_WALRUS_AGGREGATOR_URL || 'https://aggregator-devnet.walrus.space',
-    'https://walrus-testnet-aggregator.nodes.guru', 
     'https://aggregator.walrus-testnet.walrus.space'
   ]
 };
@@ -121,14 +117,12 @@ export class WalrusClient {
       for (let attempt = 1; attempt <= retries; attempt++) {
         try {
           const jsonData = JSON.stringify(data);
-          const blob = new Blob([jsonData], { type: 'application/json' });
-
-          const formData = new FormData();
-          formData.append('file', blob);
-
-          const response = await fetch(`${publisherUrl}/v1/store`, {
-            method: 'POST',
-            body: formData,
+          const response = await fetch(`${publisherUrl}/v1/blobs?epochs=1`, {
+            method: 'PUT',
+            body: jsonData,
+            headers: {
+              'Content-Type': 'application/json',
+            },
             signal: AbortSignal.timeout(30000), // 30 second timeout
           });
 
@@ -388,5 +382,5 @@ export class WalrusClient {
   }
 }
 
-// Singleton instance - MOCK MODE for testing when Walrus HTTP API is down
-export const walrusClient = new WalrusClient(true);
+// Singleton instance - REAL WALRUS HTTP API MODE
+export const walrusClient = new WalrusClient(false);

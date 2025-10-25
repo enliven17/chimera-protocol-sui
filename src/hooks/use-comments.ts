@@ -69,8 +69,14 @@ export const useComments = (marketId: string) => {
       }
 
       // Store to Walrus
-      const blobId = await walrusClient.storeBlob(JSON.stringify(newComment))
-      console.log('✅ Comment stored to Walrus:', blobId)
+      const blobResult = await walrusClient.storeBlob(JSON.stringify(newComment))
+      console.log('✅ Comment stored to Walrus:', blobResult.blobId)
+      
+      // Add blob ID to metadata
+      newComment.metadata = {
+        ...newComment.metadata,
+        blobId: blobResult.blobId
+      }
 
       // Also store locally for quick access
       const storedComments = localStorage.getItem(`comments_${marketId}`)

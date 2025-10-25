@@ -8,7 +8,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-ki
 import { placeBet } from '@/lib/sui-client';
 import { useBetWalrusStorage } from '@/hooks/useWalrusStorage';
 import { toast } from 'sonner';
-import { Loader2, TrendingUp, AlertCircle, CheckCircle, Coins } from 'lucide-react';
+import { Loader2, TrendingUp, AlertCircle, CheckCircle, Coins, ExternalLink, Copy } from 'lucide-react';
 
 interface SuiBetDialogProps {
   open: boolean;
@@ -37,6 +37,7 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
 }) => {
   const [betAmount, setBetAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [betSuccess, setBetSuccess] = useState<{txHash: string, blobId?: string} | null>(null);
   
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
@@ -45,6 +46,26 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
   const connected = !!currentAccount;
   const selectedOption = selectedSide === 'optionA' ? optionA : optionB;
   const optionIndex = selectedSide === 'optionA' ? 0 : 1;
+
+  const formatBlobId = (blobId: string) => {
+    if (!blobId) return '';
+    return `${blobId.slice(0, 8)}...${blobId.slice(-8)}`;
+  };
+
+  const copyBlobId = async (blobId: string) => {
+    try {
+      await navigator.clipboard.writeText(blobId);
+      toast.success('Blob ID copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy blob ID:', error);
+      toast.error('Failed to copy blob ID');
+    }
+  };
+
+  const openWalrusScan = (blobId: string) => {
+    const walrusScanUrl = `https://walruscan.com/testnet/blob/${blobId}`;
+    window.open(walrusScanUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,15 +125,18 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
       storeBet(betData).then((result) => {
         if (result) {
           console.log('✅ Bet stored to Walrus:', result);
+          setBetSuccess({ txHash: result.digest, blobId: result.blobId });
         }
       }).catch((error) => {
         console.error('❌ Failed to store bet to Walrus:', error);
         // Don't show error to user as the bet was successful on Sui
+        setBetSuccess({ txHash: result.digest });
       });
 
       toast.success('Bet placed successfully!');
       setBetAmount('');
-      onOpenChange(false);
+      // Don't close dialog immediately to show success state
+      // onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
       console.error('❌ Bet failed:', error);
@@ -144,76 +168,141 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="bg-gray-800/30 rounded-lg p-4 space-y-2">
-            <h3 className="font-semibold text-sm text-gray-300">Market</h3>
-            <p className="text-white font-medium">{marketTitle}</p>
-          </div>
+        {betSuccess ? (
+          <div className="space-y-6">
+            {/* Success State */}
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 text-center">
+              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-green-400 mb-2">Bet Placed Successfully!</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Your bet of {betAmount} SUI on "{selectedOption}" has been placed.
+              </p>
+              
+              {/* Transaction Hash */}
+              <div className="bg-gray-800/50 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">Transaction:</span>
+                  <code className="text-xs text-[#eab308] font-mono">
+                    {betSuccess.txHash.slice(0, 8)}...{betSuccess.txHash.slice(-8)}
+                  </code>
+                </div>
+              </div>
 
-          <div className="bg-gray-800/30 rounded-lg p-4 space-y-2">
-            <h3 className="font-semibold text-sm text-gray-300">Your Prediction</h3>
-            <Badge className={`${
-              selectedSide === 'optionA'
-                ? 'bg-[#eab308]/20 text-[#eab308] border-[#eab308]/30'
-                : 'bg-gray-600/20 text-gray-300 border-gray-600/30'
-            } font-medium`}>
-              {selectedOption}
-            </Badge>
-          </div>
+              {/* Walrus Blob ID */}
+              {betSuccess.blobId && (
+                <div className="bg-gray-800/50 rounded-lg p-3 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Walrus Blob:</span>
+                    <div className="flex items-center space-x-1">
+                      <code className="text-xs text-[#eab308] font-mono">
+                        {formatBlobId(betSuccess.blobId)}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyBlobId(betSuccess.blobId!)}
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-[#eab308]"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openWalrusScan(betSuccess.blobId!)}
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-[#eab308]"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="betAmount" className="text-sm font-medium text-gray-300">
-                Bet Amount (SUI)
-              </Label>
-              <Input
-                id="betAmount"
-                type="number"
-                step="0.01"
-                min={minBet / 1e9}
-                max={maxBet / 1e9}
-                placeholder="0.00"
-                value={betAmount}
-                onChange={(e) => setBetAmount(e.target.value)}
-                className="bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-[#eab308] focus:ring-[#eab308]/20"
-                disabled={isSubmitting}
-              />
-
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>Min: {(minBet / 1e9).toFixed(2)} SUI</span>
-                <span>Max: {(maxBet / 1e9).toFixed(0)} SUI</span>
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => {
+                    setBetSuccess(null);
+                    onOpenChange(false);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-[#eab308] to-[#ca8a04] hover:from-[#ca8a04] hover:to-[#a16207] text-white"
+                >
+                  Close
+                </Button>
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1 bg-gray-800/30 border-gray-700 text-gray-300 hover:bg-gray-700/50 hover:text-white"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-[#FFE100] to-[#E6CC00] hover:from-[#E6CC00] hover:to-[#CCAA00] text-black shadow-lg font-semibold"
-                disabled={!betAmount || parseFloat(betAmount) <= 0 || isSubmitting || !connected}
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Placing Bet...</span>
-                  </div>
-                ) : (
-                  `Place Bet (${betAmount || '0'} SUI)`
-                )}
-              </Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-gray-800/30 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm text-gray-300">Market</h3>
+              <p className="text-white font-medium">{marketTitle}</p>
             </div>
-          </form>
-        </div>
+
+            <div className="bg-gray-800/30 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm text-gray-300">Your Prediction</h3>
+              <Badge className={`${
+                selectedSide === 'optionA'
+                  ? 'bg-[#eab308]/20 text-[#eab308] border-[#eab308]/30'
+                  : 'bg-gray-600/20 text-gray-300 border-gray-600/30'
+              } font-medium`}>
+                {selectedOption}
+              </Badge>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="betAmount" className="text-sm font-medium text-gray-300">
+                  Bet Amount (SUI)
+                </Label>
+                <Input
+                  id="betAmount"
+                  type="number"
+                  step="0.01"
+                  min={minBet / 1e9}
+                  max={maxBet / 1e9}
+                  placeholder="0.00"
+                  value={betAmount}
+                  onChange={(e) => setBetAmount(e.target.value)}
+                  className="bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-[#eab308] focus:ring-[#eab308]/20"
+                  disabled={isSubmitting}
+                />
+
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>Min: {(minBet / 1e9).toFixed(2)} SUI</span>
+                  <span>Max: {(maxBet / 1e9).toFixed(0)} SUI</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="flex-1 bg-gray-800/30 border-gray-700 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-[#FFE100] to-[#E6CC00] hover:from-[#E6CC00] hover:to-[#CCAA00] text-black shadow-lg font-semibold"
+                  disabled={!betAmount || parseFloat(betAmount) <= 0 || isSubmitting || !connected}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Placing Bet...</span>
+                    </div>
+                  ) : (
+                    `Place Bet (${betAmount || '0'} SUI)`
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

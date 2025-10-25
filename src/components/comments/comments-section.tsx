@@ -3,7 +3,8 @@ import { useComments } from '@/hooks/use-comments';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, MessageCircle, Send, Trash2 } from 'lucide-react';
+import { Loader2, MessageCircle, Send, Trash2, ExternalLink, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CommentsSectionProps {
   marketId: number;
@@ -58,6 +59,26 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
+  };
+
+  const formatBlobId = (blobId: string) => {
+    if (!blobId) return '';
+    return `${blobId.slice(0, 8)}...${blobId.slice(-8)}`;
+  };
+
+  const copyBlobId = async (blobId: string) => {
+    try {
+      await navigator.clipboard.writeText(blobId);
+      toast.success('Blob ID copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy blob ID:', error);
+      toast.error('Failed to copy blob ID');
+    }
+  };
+
+  const openWalrusScan = (blobId: string) => {
+    const walrusScanUrl = `https://walruscan.com/testnet/blob/${blobId}`;
+    window.open(walrusScanUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (isLoading) {
@@ -145,7 +166,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
             {comments.map((comment) => (
               <Card key={comment.id} className="bg-gradient-to-r from-[#1A1F2C] to-[#151923] border-gray-800/50">
                 <CardContent className="p-4">
@@ -176,9 +197,37 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                     )}
                   </div>
                   
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap mb-3">
                     {comment.content}
                   </p>
+                  
+                  {/* Walrus Blob ID Badge */}
+                  {comment.metadata?.blobId && (
+                    <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-700/50">
+                      <div className="flex items-center space-x-1 bg-gray-800/50 rounded-lg px-2 py-1">
+                        <span className="text-xs text-gray-400">Blob:</span>
+                        <code className="text-xs text-[#eab308] font-mono">
+                          {formatBlobId(comment.metadata.blobId)}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyBlobId(comment.metadata.blobId)}
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-[#eab308]"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openWalrusScan(comment.metadata.blobId)}
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-[#eab308]"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
