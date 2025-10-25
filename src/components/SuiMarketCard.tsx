@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Clock, TrendingUp, TrendingDown, Trophy } from 'lucide-react';
 import { Market, placeBet, claimWinnings } from '@/lib/sui-client';
+import { useBetWalrusStorage } from '@/hooks/useWalrusStorage';
 import { toast } from 'sonner';
 
 interface SuiMarketCardProps {
@@ -19,6 +20,7 @@ interface SuiMarketCardProps {
 export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { storeBet } = useBetWalrusStorage();
   const connected = !!currentAccount;
   const [betAmount, setBetAmount] = useState('');
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -46,12 +48,47 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
 
     setIsPlacingBet(true);
     try {
+      // Place bet on Sui blockchain
       await placeBet(
         market.id,
         selectedOption,
         Math.floor(amount * 1e9), // Convert to MIST
         signAndExecuteTransaction
       );
+
+      // Store bet data to Walrus decentralized storage
+      const betData = {
+        id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        marketId: market.id,
+        marketTitle: market.title,
+        userId: currentAccount?.address || 'unknown',
+        userAddress: currentAccount?.address || 'unknown',
+        betAmount: amount,
+        betSide: selectedOption === 0 ? 'A' as const : 'B' as const,
+        odds: selectedOption === 0 ? 
+          (market.totalOptionAShares + market.totalOptionBShares) / (market.totalOptionAShares + 1) :
+          (market.totalOptionAShares + market.totalOptionBShares) / (market.totalOptionBShares + 1),
+        potentialPayout: amount * 1.5, // Simplified calculation
+        status: 'active' as const,
+        createdAt: new Date().toISOString(),
+        metadata: {
+          suiTransaction: true,
+          optionA: market.optionA,
+          optionB: market.optionB,
+          minBet: market.minBet,
+          maxBet: market.maxBet
+        }
+      };
+
+      // Store to Walrus (async, don't wait for it)
+      storeBet(betData).then((result) => {
+        if (result) {
+          console.log('✅ Bet stored to Walrus:', result);
+        }
+      }).catch((error) => {
+        console.error('❌ Failed to store bet to Walrus:', error);
+        // Don't show error to user as the bet was successful on Sui
+      });
 
       toast.success('Bet placed successfully!');
       setBetAmount('');

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { WalrusCommentsService, WalrusComment } from '@/lib/walrus-comments-service';
 import { useSignAndExecuteTransaction, useCurrentAccount } from '@mysten/dapp-kit';
+import { useCommentWalrusStorage } from '@/hooks/useWalrusStorage';
 import { toast } from 'sonner';
 
 export interface WalrusCommentsState {
@@ -13,6 +14,7 @@ export interface WalrusCommentsState {
 export function useWalrusComments(marketId: string) {
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const currentAccount = useCurrentAccount();
+  const { storeComment } = useCommentWalrusStorage();
   
   const [state, setState] = useState<WalrusCommentsState>({
     comments: [],
@@ -80,6 +82,37 @@ export function useWalrusComments(marketId: string) {
         signAndExecute
       );
 
+      // Store individual comment to Walrus decentralized storage
+      const commentData = {
+        id: newComment.id,
+        marketId: marketId,
+        userId: currentAccount.address,
+        userAddress: currentAccount.address,
+        userName: currentAccount.address.slice(0, 8) + '...', // Simplified username
+        content: content.trim(),
+        likes: 0,
+        dislikes: 0,
+        replies: [],
+        isDeleted: false,
+        createdAt: newComment.created_at,
+        metadata: {
+          walrusBlobId: newComment.walrus_blob_id,
+          parentId: parentId,
+          suiTransaction: true,
+          platform: 'Chimera Protocol Sui'
+        }
+      };
+
+      // Store to Walrus (async, don't wait for it)
+      storeComment(commentData).then((result) => {
+        if (result) {
+          console.log('✅ Comment stored to Walrus:', result);
+        }
+      }).catch((error) => {
+        console.error('❌ Failed to store comment to Walrus:', error);
+        // Don't show error to user as the comment was added successfully
+      });
+
       // Update local state
       setComments(prev => [...prev, newComment]);
       setBlobId(newComment.walrus_blob_id);
@@ -94,7 +127,7 @@ export function useWalrusComments(marketId: string) {
     } finally {
       setLoading(false);
     }
-  }, [marketId, currentAccount?.address, signAndExecute, setLoading, setError, setComments, setBlobId]);
+  }, [marketId, currentAccount?.address, signAndExecute, setLoading, setError, setComments, setBlobId, storeComment]);
 
   /**
    * Update a comment

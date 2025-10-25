@@ -2,7 +2,34 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
-import { generateNonce, generateRandomness } from '@mysten/sui.js/zklogin';
+// Manual implementation of zklogin utilities
+function generateRandomness(): bigint {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return BigInt('0x' + Array.from(array).map(b => b.toString(16).padStart(2, '0')).join(''));
+}
+
+function generateNonce(publicKey: any, maxEpoch: bigint, randomness: bigint): string {
+  const publicKeyBytes = publicKey.toBytes();
+  const maxEpochBytes = toBigEndianBytes(maxEpoch, 2);
+  const randomnessBytes = toBigEndianBytes(randomness, 32);
+  
+  const combined = new Uint8Array(publicKeyBytes.length + maxEpochBytes.length + randomnessBytes.length);
+  combined.set(publicKeyBytes, 0);
+  combined.set(maxEpochBytes, publicKeyBytes.length);
+  combined.set(randomnessBytes, publicKeyBytes.length + maxEpochBytes.length);
+  
+  return btoa(String.fromCharCode(...combined));
+}
+
+function toBigEndianBytes(value: bigint, length: number): Uint8Array {
+  const bytes = new Uint8Array(length);
+  for (let i = length - 1; i >= 0; i--) {
+    bytes[i] = Number(value & 0xFFn);
+    value >>= 8n;
+  }
+  return bytes;
+}
 import { SuiClient } from '@mysten/sui.js/client';
 import { suiClient } from '@/lib/sui-client';
 

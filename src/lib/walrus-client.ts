@@ -170,10 +170,8 @@ export class WalrusClient {
       }
     }
     
-    // All publishers failed, fallback to mock mode
-    console.warn('All Walrus publishers failed, falling back to mock mode');
-    this.mockMode = true;
-    return this.storeBlob(data, 1);
+    // All publishers failed - throw error instead of fallback
+    throw lastError || new Error('All Walrus publishers failed - no fallback to mock mode');
   }
 
   /**
@@ -390,6 +388,5 @@ export class WalrusClient {
   }
 }
 
-// Singleton instance with automatic fallback to mock mode
-// Start in mock mode since network is currently unavailable
-export const walrusClient = new WalrusClient(true);
+// Singleton instance - NO MOCK MODE, real Walrus storage only
+export const walrusClient = new WalrusClient(false);

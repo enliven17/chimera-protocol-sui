@@ -30,3 +30,4 @@ contexts:
     rpc_urls:
       - https://fullnode.testnet.sui.io:443
 default_context: testnet
+

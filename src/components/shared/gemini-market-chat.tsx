@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAllMarkets } from '@/lib/sui-client';
-import { useWalrusStorage } from '@/hooks/useWalrusStorage';
+import { useMarketWalrusStorage } from '@/hooks/useWalrusStorage';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 
 interface ChatMessage {
@@ -44,7 +44,7 @@ interface GeminiMarketChatProps {
 
 export function GeminiMarketChat({ className }: GeminiMarketChatProps) {
   const currentAccount = useCurrentAccount();
-  const walrusStorage = useWalrusStorage();
+  const marketWalrusStorage = useMarketWalrusStorage();
   
   const [messages, setMessages] = useState<ChatMessage[]>([
     {

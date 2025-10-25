@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useChimeraProtocol } from '@/hooks/useChimeraProtocol';
 import { usePYUSD } from '@/hooks/usePYUSD';
+import { useBetWalrusStorage } from '@/hooks/useWalrusStorage';
 import { useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import { Loader2, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Shield, Coins } from 'lucide-react';
@@ -71,6 +72,7 @@ export const BetDialog: React.FC<BetDialogProps> = ({
   const { data: balance } = useBalance(address);
   const { data: allowance } = useChimeraAllowance(address);
   const { placeBet, isPending, isConfirming, isConfirmed, hash, useMarket } = useChimeraProtocol();
+  const { storeBet } = useBetWalrusStorage();
   const { data: market } = useMarket(parseInt(marketId));
 
   const selectedOption = selectedSide === 'optionA' ? optionA : optionB;
@@ -79,6 +81,38 @@ export const BetDialog: React.FC<BetDialogProps> = ({
   // Handle successful transactions
   useEffect(() => {
     if (isConfirmed && hash) {
+      // Store bet data to Walrus decentralized storage
+      const betData = {
+        id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        marketId: marketId,
+        marketTitle: marketTitle,
+        userId: address || 'unknown',
+        userAddress: address || 'unknown',
+        betAmount: parseFloat(betAmount),
+        betSide: selectedSide === 'optionA' ? 'A' as const : 'B' as const,
+        odds: 1.5, // Simplified calculation
+        potentialPayout: parseFloat(betAmount) * 1.5,
+        status: 'active' as const,
+        createdAt: new Date().toISOString(),
+        metadata: {
+          hederaTransaction: true,
+          transactionHash: hash,
+          optionA: optionA,
+          optionB: optionB,
+          chainId: chain?.id
+        }
+      };
+
+      // Store to Walrus (async, don't wait for it)
+      storeBet(betData).then((result) => {
+        if (result) {
+          console.log('✅ Bet stored to Walrus:', result);
+        }
+      }).catch((error) => {
+        console.error('❌ Failed to store bet to Walrus:', error);
+        // Don't show error to user as the bet was successful on Hedera
+      });
+
       toast.success('Bet placed successfully!');
       setBetAmount('');
       setCurrentStep('input');

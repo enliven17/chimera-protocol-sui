@@ -12,12 +12,14 @@ import { Switch } from '@/components/ui/switch';
 import { SuiWalletButton } from '@/components/SuiWalletButton';
 import { SuiMarketCard } from '@/components/SuiMarketCard';
 import { createMarket, getAllMarkets, Market, MARKET_TYPE_CUSTOM, MARKET_TYPE_PRICE } from '@/lib/sui-client';
+import { useMarketWalrusStorage } from '@/hooks/useWalrusStorage';
 import { toast } from 'sonner';
 import { Plus, RefreshCw } from 'lucide-react';
 
 export default function SuiMarketsPage() {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { storeMarket } = useMarketWalrusStorage();
   const connected = !!currentAccount;
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,6 +109,43 @@ export default function SuiMarketsPage() {
         formData.priceAbove,
         { signAndExecuteTransaction }
       );
+
+      // Store market data to Walrus decentralized storage
+      const marketData = {
+        id: `market-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category.toString(),
+        endDate: new Date(endTime * 1000).toISOString(),
+        options: {
+          A: formData.optionA,
+          B: formData.optionB
+        },
+        totalVolume: 0,
+        totalBets: 0,
+        status: 'active' as const,
+        createdAt: new Date().toISOString(),
+        createdBy: currentAccount?.address || 'unknown',
+        metadata: {
+          suiTransaction: true,
+          marketType: formData.marketType,
+          minBet: Math.floor(minBet * 1e9),
+          maxBet: Math.floor(maxBet * 1e9),
+          targetPrice: Math.floor(parseFloat(formData.targetPrice) * 1e8),
+          priceAbove: formData.priceAbove,
+          imageUrl: formData.imageUrl
+        }
+      };
+
+      // Store to Walrus (async, don't wait for it)
+      storeMarket(marketData).then((result) => {
+        if (result) {
+          console.log('✅ Market stored to Walrus:', result);
+        }
+      }).catch((error) => {
+        console.error('❌ Failed to store market to Walrus:', error);
+        // Don't show error to user as the market was created successfully on Sui
+      });
 
       toast.success('Market created successfully!');
       setShowCreateForm(false);

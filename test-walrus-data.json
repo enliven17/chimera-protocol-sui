@@ -1,0 +1,16 @@
+{
+  "type": "test_data",
+  "timestamp": "2025-10-25T12:33:00.000Z",
+  "content": "Merhaba! Bu Chimera Protocol Sui projesi için Walrus test verisidir.",
+  "metadata": {
+    "version": "1.0",
+    "platform": "Chimera Protocol Sui",
+    "testId": "chimera-walrus-test-001",
+    "language": "Turkish"
+  },
+  "project": {
+    "name": "Chimera Protocol Sui",
+    "description": "Prediction market platform on Sui blockchain",
+    "features": ["Walrus storage", "Sui integration", "Prediction markets"]
+  }
+}
