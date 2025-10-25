@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { PriceServiceConnection } from '@pythnetwork/pyth-sdk-js';
 
 // SUI Price ID from Pyth
 export const PYTH_PRICE_IDS = {
-  SUI_USD: '0x50c67b3fd225db8912a424dd4baed60ffdde625ed2fea283724f9608fea266',
+  SUI_USD: '0x23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744',
   BTC_USD: '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43',
   ETH_USD: '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace',
 } as const;
@@ -23,28 +24,32 @@ interface UsePythPriceResult {
 // Pyth Hermes API base URL
 const PYTH_API_BASE = 'https://hermes.pyth.network/v2';
 
-// Fetch price data from Pyth Hermes API
+// Fetch price data from Pyth Hermes API using SDK
 async function fetchPythPrice(priceId: string): Promise<PriceData> {
-  const response = await fetch(`${PYTH_API_BASE}/updates/price/latest?ids[]=${priceId}`);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch price: ${response.statusText}`);
+  try {
+    // Create Pyth connection
+    const connection = new PriceServiceConnection('https://hermes.pyth.network/v2');
+    
+    // Get latest price feeds
+    const priceFeeds = await connection.getLatestPriceFeeds([priceId]);
+    
+    if (!priceFeeds || priceFeeds.length === 0) {
+      throw new Error(`No price feed found for ID: ${priceId}`);
+    }
+    
+    const priceFeed = priceFeeds[0];
+    const price = priceFeed.getPriceUnchecked();
+    
+    return {
+      price: price.price,
+      confidence: price.conf,
+      timestamp: price.publishTime,
+      expo: price.expo
+    };
+  } catch (error) {
+    console.warn('Pyth SDK failed:', error);
+    throw error;
   }
-  
-  const data = await response.json();
-  
-  if (!data.parsed || !data.parsed[priceId]) {
-    throw new Error('Price data not found');
-  }
-  
-  const priceInfo = data.parsed[priceId];
-  
-  return {
-    price: priceInfo.price,
-    confidence: priceInfo.conf,
-    timestamp: priceInfo.publish_time,
-    expo: priceInfo.expo
-  };
 }
 
 export function usePythPrice(priceId: string, enabled: boolean = true): UsePythPriceResult {
@@ -65,41 +70,7 @@ export function usePythPrice(priceId: string, enabled: boolean = true): UsePythP
       } catch (err) {
         console.error('Error fetching Pyth price:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch price');
-        
-        // Fallback to mock data if API fails
-        let mockPrice: PriceData;
-        
-        switch (priceId) {
-          case PYTH_PRICE_IDS.SUI_USD:
-            mockPrice = {
-              price: 1.85,
-              confidence: 0.95,
-              timestamp: Date.now(),
-              expo: -8
-            };
-            break;
-          case PYTH_PRICE_IDS.BTC_USD:
-            mockPrice = {
-              price: 45000,
-              confidence: 0.98,
-              timestamp: Date.now(),
-              expo: -8
-            };
-            break;
-          case PYTH_PRICE_IDS.ETH_USD:
-            mockPrice = {
-              price: 2800,
-              confidence: 0.97,
-              timestamp: Date.now(),
-              expo: -8
-            };
-            break;
-          default:
-            throw new Error(`Unknown price ID: ${priceId}`);
-        }
-        
-        setData(mockPrice);
-        setError(null); // Clear error since we have fallback data
+        setData(null);
       } finally {
         setIsLoading(false);
       }
@@ -107,8 +78,8 @@ export function usePythPrice(priceId: string, enabled: boolean = true): UsePythP
 
     fetchPrice();
     
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchPrice, 30000);
+    // Refresh every 5 seconds for real-time prices
+    const interval = setInterval(fetchPrice, 5000);
     return () => clearInterval(interval);
   }, [priceId, enabled]);
 
