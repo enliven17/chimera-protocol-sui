@@ -17,5 +17,8 @@
         }
       ]
     }
-  ]
+  ],
+  "buildCommand": "next build",
+  "framework": "nextjs",
+  "installCommand": "npm install"
 }

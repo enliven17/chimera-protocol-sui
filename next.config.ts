@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUI_NETWORK: process.env.NEXT_PUBLIC_SUI_NETWORK,
     NEXT_PUBLIC_SUI_RPC_URL: process.env.NEXT_PUBLIC_SUI_RPC_URL,
   },
+  // Fix for Vercel routing issues
+  trailingSlash: false,
 };
 
 export default nextConfig;
