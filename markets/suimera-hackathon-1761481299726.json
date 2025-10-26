@@ -1,0 +1,15 @@
+{
+  "title": "Will Suimera project win the Build on SUI Hackathon?",
+  "description": "Prediction market for whether the Suimera project will win the Build on SUI Hackathon. The market will resolve based on the official hackathon results announcement. Suimera is an AI-powered prediction market platform built on Sui blockchain with Walrus storage integration.",
+  "optionA": "Yes - Suimera wins",
+  "optionB": "No - Suimera doesn't win",
+  "category": 3,
+  "endTime": 1761654095762,
+  "minBet": "0.1",
+  "maxBet": "50",
+  "imageUrl": "/sui2.png",
+  "marketId": "0x2cbf1efd4af12c9c4d805360d8a3e82497b1d6a20b0647ae96dbbc3792b4e518",
+  "transactionDigest": "9DqPLgBk1qFsqzLZQCrqzVPzSGYe69f9KMcfdEECFDFm",
+  "timestamp": "2025-10-26T12:21:39.724Z",
+  "network": "testnet"
+}

@@ -376,15 +376,21 @@ export async function getAllMarkets(): Promise<Market[]> {
 
     // Get all market objects from the registry
     // Note: This is a simplified approach - in practice you'd need to iterate through the table
-    // For now, we'll try to get the market we just created
-    try {
-      const marketObject = await suiClient.getObject({
-        id: '0x8a471a78a327f0ec0988896f275c9041beb81625ad5db7528c44905e2dae09fa',
-        options: {
-          showContent: true,
-          showType: true,
-        },
-      });
+    // For now, we'll try to get the markets we created
+    const marketIds = [
+      '0x8a471a78a327f0ec0988896f275c9041beb81625ad5db7528c44905e2dae09fa',
+      '0x2cbf1efd4af12c9c4d805360d8a3e82497b1d6a20b0647ae96dbbc3792b4e518' // Suimera Hackathon market
+    ];
+
+    for (const marketId of marketIds) {
+      try {
+        const marketObject = await suiClient.getObject({
+          id: marketId,
+          options: {
+            showContent: true,
+            showType: true,
+          },
+        });
 
       if (marketObject.data && marketObject.data.content?.dataType === 'moveObject') {
         const marketData = marketObject.data.content.fields as any;
@@ -415,9 +421,10 @@ export async function getAllMarkets(): Promise<Market[]> {
         };
 
         markets.push(market);
+        }
+      } catch (error) {
+        console.error(`Error fetching market object ${marketId}:`, error);
       }
-    } catch (error) {
-      console.error('Error fetching market object:', error);
     }
 
     return markets;

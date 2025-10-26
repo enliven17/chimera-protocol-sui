@@ -97,6 +97,15 @@ export default function MarketDetailPage() {
           priceAbove: marketData.price_above,
         };
 
+        console.log('📊 Market data from blockchain:', {
+          id: market.id,
+          totalPool: market.totalPool,
+          totalPoolSUI: market.totalPool / 1e9,
+          totalOptionAShares: market.totalOptionAShares,
+          totalOptionBShares: market.totalOptionBShares,
+          totalShares: (market.totalOptionAShares + market.totalOptionBShares) / 1e9
+        });
+        
         setMarket(market);
         setError(null);
       } else {
@@ -121,10 +130,11 @@ export default function MarketDetailPage() {
       console.log('Event details:', event.detail);
       
       // Wait a bit for blockchain to update, then refresh
+      // Increased timeout to allow blockchain state to propagate
       setTimeout(() => {
         console.log('🔄 Fetching updated market data...');
         fetchMarket();
-      }, 1000);
+      }, 2000); // Increased from 1000ms to 2000ms
     };
 
     // Listen for custom bet update events
@@ -135,7 +145,6 @@ export default function MarketDetailPage() {
     };
   }, [fetchMarket]);
 
-  const trades: any[] = []; // Would come from Sui contract events
   const comments: any[] = []; // Comments would come from Walrus storage
   const userPosition = null; // Would need Sui wallet connection
 
@@ -143,6 +152,61 @@ export default function MarketDetailPage() {
   const [selectedSide, setSelectedSide] = useState<"optionA" | "optionB">("optionA");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [tradeCount, setTradeCount] = useState(0);
+  const [localVolume, setLocalVolume] = useState(0);
+  
+  // Calculate trade count and volume from localStorage
+  useEffect(() => {
+    const calculateStats = () => {
+      try {
+        const globalBetsKey = 'all_bets';
+        const storedBets = localStorage.getItem(globalBetsKey);
+        
+        if (storedBets) {
+          const allBets = JSON.parse(storedBets);
+          // Filter bets for this market
+          const marketBets = allBets.filter((bet: any) => bet.marketId === marketId);
+          
+          // Calculate trade count
+          setTradeCount(marketBets.length);
+          
+          // Calculate local volume (sum of all bet amounts)
+          const volume = marketBets.reduce((sum: number, bet: any) => {
+            return sum + (typeof bet.betAmount === 'number' ? bet.betAmount : Number(bet.betAmount));
+          }, 0);
+          setLocalVolume(volume);
+          
+          console.log(`📊 Market ${marketId} stats:`, {
+            tradeCount: marketBets.length,
+            localVolume: volume,
+            bets: marketBets
+          });
+        } else {
+          setTradeCount(0);
+          setLocalVolume(0);
+        }
+      } catch (error) {
+        console.error('Failed to calculate market stats:', error);
+        setTradeCount(0);
+        setLocalVolume(0);
+      }
+    };
+    
+    calculateStats();
+    
+    // Listen for bet events to update stats
+    const handleBetPlaced = () => {
+      setTimeout(calculateStats, 500);
+    };
+    
+    window.addEventListener('betPlaced', handleBetPlaced);
+    window.addEventListener('storage', calculateStats);
+    
+    return () => {
+      window.removeEventListener('betPlaced', handleBetPlaced);
+      window.removeEventListener('storage', calculateStats);
+    };
+  }, [marketId]);
 
 
   // Loading state
@@ -374,7 +438,7 @@ export default function MarketDetailPage() {
 
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-yellow-400" />
-              <span>{formatCurrency(market.totalPool / 1e9)} SUI volume</span>
+              <span>{formatCurrency(Math.max(market.totalPool / 1e9, localVolume))} SUI volume</span>
             </div>
           </div>
         </div>
@@ -493,7 +557,7 @@ export default function MarketDetailPage() {
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800/50">
                   <div className="text-center p-3 rounded-lg bg-gray-800/20">
                     <div className="text-xl font-bold text-white">
-                      {formatCurrency(market.totalPool / 1e9)} SUI
+                      {formatCurrency(Math.max(market.totalPool / 1e9, localVolume))} SUI
                     </div>
                     <div className="text-xs text-gray-400 font-medium">Volume</div>
                   </div>
@@ -504,7 +568,7 @@ export default function MarketDetailPage() {
                     <div className="text-xs text-gray-400 font-medium">Shares</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gray-800/20">
-                    <div className="text-xl font-bold text-white">{trades.length}</div>
+                    <div className="text-xl font-bold text-white">{tradeCount}</div>
                     <div className="text-xs text-gray-400 font-medium">Trades</div>
                   </div>
                 </div>

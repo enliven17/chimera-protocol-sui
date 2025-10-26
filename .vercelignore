@@ -1,0 +1,78 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+package-lock.json
+
+# Large example directories
+sui-examples
+walrus
+sui
+
+# Build artifacts and cache
+cache
+sui_contracts/build
+sui_contracts/Move.lock
+.next
+out
+
+# Agent backend code
+agents
+
+# Test files
+test
+*.test.js
+*.test.ts
+
+# Deployment and market data
+deployments
+markets
+temp-*.json
+test-walrus-data.json
+temp-market-data.json
+
+# Environment files
+.env*.local
+.env
+
+# IDE and system files
+.vscode
+.idea
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Hardhat artifacts
+artifacts
+typechain
+typechain-types
+
+# Docker files
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Documentation (optional, uncomment if you want to exclude)
+# *.md
+# DEVELOPMENT_DOCUMENTATION.md
+# PROJECT_OVERVIEW.md
+
+# SQL files
+*.sql
+
+# Binary files
+*.exe
+*.tgz
+*.tar.gz
+
+# Walrus config
+walrus-config.yaml
+
+# Scripts that aren't needed for deployment
+scripts/setup-walrus-windows.ps1
+scripts/install-walrus-cli.js
+scripts/walrus-status.js
+
+# Hardhat (blockchain development, not needed for frontend)
+hardhat.config.ts
+contracts
+

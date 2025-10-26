@@ -1,0 +1,17 @@
+{
+  "name": "Suimera",
+  "short_name": "Suimera",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0C14",
+  "theme_color": "#4DA6FF",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
+
+
