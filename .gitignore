@@ -9,7 +9,7 @@ artifacts
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-sui
+sui/
 # agents dependencies
 agents/*/node_modules/
 agents/*/__pycache__/
