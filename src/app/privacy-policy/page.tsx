@@ -40,7 +40,7 @@ const privacySections = [
     title: "How We Use Your Information",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        We use your information to operate ChimeraAI, process transactions, comply with laws, improve security and user experience, and communicate with you.
+        We use your information to operate Suimera, process transactions, comply with laws, improve security and user experience, and communicate with you.
       </p>
     ),
   },
@@ -49,7 +49,7 @@ const privacySections = [
     title: "Blockchain Transparency",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        Wallet addresses and transactions are public and immutable on EVM-based blockchains. ChimeraAI cannot alter or erase blockchain records.
+        Wallet addresses and transactions are public and immutable on the Sui blockchain. Suimera cannot alter or erase blockchain records.
       </p>
     ),
   },
@@ -58,7 +58,7 @@ const privacySections = [
     title: "Regional Restrictions",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI does not provide services to users in the United States of America (USA) or in jurisdictions where cryptocurrency or prediction platforms are restricted (e.g., China, North Korea).
+        Suimera does not provide services to users in the United States of America (USA) or in jurisdictions where cryptocurrency or prediction platforms are restricted (e.g., China, North Korea).
       </p>
     ),
   },
@@ -112,7 +112,7 @@ const privacySections = [
     title: "Children's Privacy",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI is not intended for users under 18 (or legal age in their jurisdiction). Data from minors will be deleted.
+        Suimera is not intended for users under 18 (or legal age in their jurisdiction). Data from minors will be deleted.
       </p>
     ),
   },
@@ -136,12 +136,12 @@ const privacySections = [
         <ul className="list-none mt-2">
           <li>
             <Link
-              href="https://chimeraai.com"
+              href="https://suimera.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#eab308] hover:text-[#ca8a04] transition-colors duration-150"
             >
-              chimeraai.com
+              suimera.com
             </Link>
           </li>
         </ul>
@@ -164,8 +164,8 @@ const Page = () => {
   return (
     <div className="text-white min-h-screen flex flex-col mt-4">
       <header className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">ChimeraAI Privacy Policies</h1>
-        <p className="text-gray-200 text-sm mt-2">Effective Date: October 12, 2025 | Last Updated: October 12, 2025</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Suimera Privacy Policies</h1>
+        <p className="text-gray-200 text-sm mt-2">Effective Date: October 26, 2025 | Last Updated: October 26, 2025</p>
       </header>
 
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 gap-8">

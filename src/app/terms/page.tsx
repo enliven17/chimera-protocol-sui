@@ -9,9 +9,9 @@ const termsSections = [
     title: "Nature of the Platform",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI is an AI-powered prediction platform built on Hedera EVM
+        Suimera is an AI-powered prediction platform built on Sui blockchain
         with autonomous agents. It allows users to participate in binary prediction markets.
-        ChimeraAI is not a betting, gambling, or gaming service.
+        Suimera is not a betting, gambling, or gaming service.
       </p>
     ),
   },
@@ -21,7 +21,7 @@ const termsSections = [
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
         You must be at least 18 years old (or the age of majority in your
-        jurisdiction) to use ChimeraAI. You may not use the platform if you are
+        jurisdiction) to use Suimera. You may not use the platform if you are
         located in the United States of America (USA) or any jurisdiction where
         cryptocurrency or prediction platforms are restricted (e.g., China,
         North Korea).
@@ -33,9 +33,9 @@ const termsSections = [
     title: "Wallets and Blockchain",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        Users must connect an EVM-compatible wallet to use ChimeraAI.
+        Users must connect a Sui-compatible wallet to use Suimera.
         You are solely responsible for safeguarding your wallet keys, passwords,
-        and seed phrases. ChimeraAI cannot recover lost wallets or funds.
+        and seed phrases. Suimera cannot recover lost wallets or funds.
       </p>
     ),
   },
@@ -44,9 +44,9 @@ const termsSections = [
     title: "Assumption of Risk",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        Participation involves financial risk. You may lose PYUSD tokens. Market
+        Participation involves financial risk. You may lose SUI tokens. Market
         conditions, smart contract issues, or blockchain malfunctions may impact
-        your experience. You agree that you use ChimeraAI at your own risk.
+        your experience. You agree that you use Suimera at your own risk.
       </p>
     ),
   },
@@ -66,7 +66,7 @@ const termsSections = [
     title: "No Financial Advice",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI does not provide financial, legal, tax, or investment advice.
+        Suimera does not provide financial, legal, tax, or investment advice.
         Information provided is for informational and educational purposes only.
       </p>
     ),
@@ -76,7 +76,7 @@ const termsSections = [
     title: "Limitation of Liability",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        To the maximum extent permitted by law, ChimeraAI and its affiliates are
+        To the maximum extent permitted by law, Suimera and its affiliates are
         not liable for direct, indirect, incidental, or consequential damages
         arising from your use of the platform. Your sole remedy is to stop using
         the service.
@@ -88,7 +88,7 @@ const termsSections = [
     title: "Indemnification",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        You agree to indemnify and hold harmless ChimeraAI, its affiliates, and
+        You agree to indemnify and hold harmless Suimera, its affiliates, and
         team members from any claims, damages, or expenses arising from your use
         of the platform or violation of these terms.
       </p>
@@ -99,7 +99,7 @@ const termsSections = [
     title: "Modifications",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI may update these Terms at any time. Updated Terms will be
+        Suimera may update these Terms at any time. Updated Terms will be
         posted with a new 'Last Updated' date. Continued use of the
         platform indicates acceptance.
       </p>
@@ -110,7 +110,7 @@ const termsSections = [
     title: "Termination",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI may suspend or terminate your access at any time for
+        Suimera may suspend or terminate your access at any time for
         violations of these Terms or harmful conduct.
       </p>
     ),
@@ -137,12 +137,12 @@ const termsSections = [
         <ul className="list-none mt-2">
           <li>
             <Link
-              href="https://chimeraai.com"
+              href="https://suimera.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#eab308] hover:text-[#ca8a04] transition-colors duration-150"
             >
-              chimeraai.com
+              suimera.com
             </Link>
           </li>
         </ul>
@@ -165,8 +165,8 @@ const Page = () => {
   return (
     <div className="text-white min-h-screen flex flex-col mt-4">
       <header className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">ChimeraAI Terms of Service</h1>
-        <p className="text-gray-200 text-sm mt-2">Effective Date: October 12, 2025 | Last Updated: October 12, 2025</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Suimera Terms of Service</h1>
+        <p className="text-gray-200 text-sm mt-2">Effective Date: October 26, 2025 | Last Updated: October 26, 2025</p>
       </header>
 
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 gap-8">

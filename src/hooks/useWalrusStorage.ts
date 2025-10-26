@@ -417,3 +417,73 @@ export function useCommentWalrusStorage() {
     storeUserCommentHistory
   };
 }
+
+// Generic Walrus storage hook for bet history (used in my-bets page)
+export function useWalrusStorage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastBlobId, setLastBlobId] = useState<string | null>(null);
+
+  const storeBetHistory = useCallback(async (bets: any[], userAddress: string): Promise<string | null> => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/walrus-storage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'bet',
+          action: 'user-history',
+          data: { userAddress, bets }
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to store bet history');
+      }
+
+      setLastBlobId(result.blobId);
+      return result.blobId;
+    } catch (err) {
+      console.error('Bet history storage error:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const retrieveBetHistory = useCallback(async (blobId: string): Promise<any[] | null> => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/walrus-storage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'bet',
+          action: 'retrieve',
+          blobId
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to retrieve bet history');
+      }
+
+      return result.bet || result.bets || null;
+    } catch (err) {
+      console.error('Bet history retrieval error:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    isLoading,
+    lastBlobId,
+    storeBetHistory,
+    retrieveBetHistory
+  };
+}

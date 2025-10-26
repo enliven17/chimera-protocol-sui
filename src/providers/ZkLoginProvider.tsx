@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 // Manual implementation of zklogin utilities
 function generateRandomness(): bigint {
   const array = new Uint8Array(32);
@@ -30,7 +30,7 @@ function toBigEndianBytes(value: bigint, length: number): Uint8Array {
   }
   return bytes;
 }
-import { SuiClient } from '@mysten/sui.js/client';
+import { SuiClient } from '@mysten/sui/client';
 import { suiClient } from '@/lib/sui-client';
 
 export type Provider = 'google' | 'facebook' | 'twitch';

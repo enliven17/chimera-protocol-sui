@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Clock, TrendingUp, TrendingDown, Trophy, Image as ImageIcon, CheckCircle, Pause, DollarSign } from 'lucide-react';
-import { Market, placeBet, claimWinnings } from '@/lib/sui-client';
+import { Market, createPlaceBetTransaction, claimWinnings } from '@/lib/sui-client';
 import { useBetWalrusStorage } from '@/hooks/useWalrusStorage';
 import { usePythPrice } from '@/hooks/usePythPrices';
 import { toast } from 'sonner';
@@ -98,12 +98,28 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
     try {
       console.log('🎯 Placing Sui bet:', { marketId: market.id, optionIndex: selectedOption, betAmount: amount, address: currentAccount?.address });
       
-      // Place bet on Sui blockchain
-      await placeBet(
+      // Create and execute transaction
+      const { createPlaceBetTransaction } = await import('@/lib/sui-client');
+      const tx = createPlaceBetTransaction(
         market.id,
         selectedOption,
-        Math.floor(amount * 1e9), // Convert to MIST
-        signAndExecuteTransaction
+        Math.floor(amount * 1e9) // Convert to MIST
+      );
+
+      // Execute transaction using the hook - new dapp-kit style
+      await signAndExecuteTransaction(
+        {
+          transaction: tx,
+        },
+        {
+          onSuccess: (result: any) => {
+            console.log('✅ Transaction successful:', result);
+          },
+          onError: (error: any) => {
+            console.error('❌ Transaction failed:', error);
+            throw error;
+          },
+        }
       );
 
       // Store bet data to Walrus decentralized storage

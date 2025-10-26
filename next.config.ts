@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  // Exclude Mysten packages from server components bundling
+  serverExternalPackages: [
+    '@mysten/dapp-kit',
+    '@mysten/sui.js',
+    '@mysten/wallet-standard',
+  ],
   images: {
     domains: [
       "images.unsplash.com",
@@ -33,6 +39,28 @@ const nextConfig: NextConfig = {
       '@flow-wager': path.resolve(__dirname, 'flow-wager'),
     };
 
+    // Handle Mysten SDK packages - mark as external for server-side
+    if (isServer) {
+      // Get existing externals or initialize empty array
+      const existingExternals = config.externals || [];
+      
+      config.externals = [
+        ...(Array.isArray(existingExternals) ? existingExternals : [existingExternals]),
+        // Mark Mysten packages as external for server-side
+        ({ request }: { request: string }, callback: (error?: Error | null, result?: string) => void) => {
+          if (
+            request.startsWith('@mysten/') ||
+            request.includes('@mysten/dapp-kit') ||
+            request.includes('@mysten/sui') ||
+            request.includes('@mysten/wallet')
+          ) {
+            return callback(null, `commonjs ${request}`);
+          }
+          callback();
+        },
+      ];
+    }
+
     // Only add fallback for client-side
     if (!isServer) {
       config.resolve.fallback = {
@@ -40,6 +68,13 @@ const nextConfig: NextConfig = {
         fs: false,
         net: false,
         tls: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        path: false,
+        os: false,
       };
     }
 

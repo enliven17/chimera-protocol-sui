@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
-import { jwtToAddress } from '@mysten/sui.js/zklogin';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { jwtToAddress } from '@mysten/sui/zklogin';
 
 export async function POST(request: NextRequest) {
   try {

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
-import { placeBet } from '@/lib/sui-client';
+import { createPlaceBetTransaction } from '@/lib/sui-client';
 import { useBetWalrusStorage } from '@/hooks/useWalrusStorage';
 import { toast } from 'sonner';
 import { Loader2, TrendingUp, AlertCircle, CheckCircle, Coins, ExternalLink, Copy } from 'lucide-react';
@@ -91,12 +91,28 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
       
       console.log('🎯 Placing Sui bet:', { marketId, optionIndex, betAmount, address: currentAccount?.address });
       
-      // Place bet on Sui blockchain
-      const result = await placeBet(
+      // Create and execute transaction
+      const { createPlaceBetTransaction } = await import('@/lib/sui-client');
+      const tx = createPlaceBetTransaction(
         marketId,
         optionIndex,
-        Math.floor(amount * 1e9), // Convert to MIST
-        signAndExecuteTransaction
+        Math.floor(amount * 1e9) // Convert to MIST
+      );
+
+      // Execute transaction using the hook - new dapp-kit style
+      const result = await signAndExecuteTransaction(
+        {
+          transaction: tx,
+        },
+        {
+          onSuccess: (result: any) => {
+            console.log('✅ Transaction successful:', result);
+          },
+          onError: (error: any) => {
+            console.error('❌ Transaction failed:', error);
+            throw error;
+          },
+        }
       );
 
       console.log('✅ Bet transaction result:', result);
@@ -128,6 +144,24 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
         if (walrusResult) {
           console.log('✅ Bet stored to Walrus:', walrusResult);
           setBetSuccess({ txHash: result.digest, blobId: walrusResult.blobId });
+          
+          // Save blob ID to localStorage for user's bet history
+          if (currentAccount?.address) {
+            try {
+              const storageKey = `user_bet_blobs_${currentAccount.address}`;
+              const existingBlobs = localStorage.getItem(storageKey);
+              const blobIds: string[] = existingBlobs ? JSON.parse(existingBlobs) : [];
+              
+              // Add new blob ID if not already present
+              if (!blobIds.includes(walrusResult.blobId)) {
+                blobIds.unshift(walrusResult.blobId); // Add to beginning (newest first)
+                localStorage.setItem(storageKey, JSON.stringify(blobIds));
+                console.log('✅ Bet blob ID saved to localStorage:', walrusResult.blobId);
+              }
+            } catch (error) {
+              console.error('Failed to save blob ID to localStorage:', error);
+            }
+          }
         } else {
           // If Walrus storage fails, still show success with transaction hash
           setBetSuccess({ txHash: result.digest });

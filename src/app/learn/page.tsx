@@ -4,12 +4,12 @@ import { useEffect, useRef } from "react";
 
 const learnSections = [
   {
-    id: "what-is-chimeraai",
-    title: "What Is ChimeraAI",
+    id: "what-is-suimera",
+    title: "What Is Suimera",
     content: (
       <p className="text-gray-300 text-sm leading-relaxed">
-        ChimeraAI is an AI-powered binary prediction platform built on
-        Hedera EVM. Participants use PYUSD tokens to express beliefs about
+        Suimera is an AI-powered binary prediction platform built on
+        Sui blockchain. Participants use SUI tokens to express beliefs about
         future events by staking on either a Yes or a No outcome. The
         distribution of stakes across outcomes reflects the community's implied
         probability for each event.
@@ -18,7 +18,7 @@ const learnSections = [
   },
   {
     id: "how-it-works",
-    title: "How ChimeraAI Works",
+    title: "How Suimera Works",
     content: (
       <ul className="list-none space-y-2 text-gray-300 text-sm leading-relaxed">
         <li>
@@ -26,15 +26,15 @@ const learnSections = [
           Each market resolves to either Yes or No.
         </li>
         <li>
-          <span className="font-semibold text-gray-100">Stake PYUSD:</span>{" "}
-          Choose your side and stake PYUSD tokens. Stakes are locked in a smart
+          <span className="font-semibold text-gray-100">Stake SUI:</span>{" "}
+          Choose your side and stake SUI tokens. Stakes are locked in a smart
           contract until resolution.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
             Implied Probability:
           </span>{" "}
-          The ratio of PYUSD on each side indicates the market's current
+          The ratio of SUI on each side indicates the market's current
           consensus.
         </li>
         <li>
@@ -52,12 +52,12 @@ const learnSections = [
   },
   {
     id: "why-use",
-    title: "Why Use ChimeraAI",
+    title: "Why Use Suimera",
     content: (
       <ul className="list-none space-y-2 text-gray-300 text-sm leading-relaxed">
         <li>
-          <span className="font-semibold text-gray-100">Powered by Hedera:</span>{" "}
-          Native utility for the Hedera EVM ecosystem.
+          <span className="font-semibold text-gray-100">Powered by Sui:</span>{" "}
+          Native utility for the Sui blockchain ecosystem with fast, low-cost transactions.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
@@ -79,7 +79,7 @@ const learnSections = [
         </li>
         <li>
           <span className="font-semibold text-gray-100">No House Edge:</span>{" "}
-          ChimeraAI is a neutral protocol; it is not your counterparty.
+          Suimera is a neutral protocol; it is not your counterparty.
         </li>
       </ul>
     ),
@@ -104,28 +104,28 @@ const learnSections = [
       <ul className="list-none space-y-2 text-gray-300 text-sm leading-relaxed">
         <li>
           <span className="font-semibold text-gray-100">Risk:</span> If your
-          prediction is incorrect, you may lose your staked PYUSD tokens. Only
+          prediction is incorrect, you may lose your staked SUI tokens. Only
           stake what you can afford to lose.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
             Restricted Regions:
           </span>{" "}
-          ChimeraAI is not available in the USA or jurisdictions that prohibit
+          Suimera is not available in the USA or jurisdictions that prohibit
           or restrict cryptocurrency use.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
             No Financial Advice:
           </span>{" "}
-          ChimeraAI provides an information and education platform; it does not
+          Suimera provides an information and education platform; it does not
           provide investment or legal advice.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
             On-Chain Transparency:
           </span>{" "}
-          All activity is public, immutable, and auditable on the Hedera
+          All activity is public, immutable, and auditable on the Sui
           blockchain.
         </li>
       </ul>
@@ -140,24 +140,24 @@ const learnSections = [
           <span className="font-semibold text-gray-100">
             Create a Wallet:
           </span>{" "}
-          Use a Hedera EVM-compatible wallet and secure your
+          Use a Sui-compatible wallet (Sui Wallet, Suiet, etc.) and secure your
           seed phrase.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
-            Acquire PYUSD Tokens:
+            Acquire SUI Tokens:
           </span>{" "}
-          Buy PYUSD via our bridge system and transfer them to your wallet.
+          Buy SUI from exchanges and transfer them to your wallet.
         </li>
         <li>
           <span className="font-semibold text-gray-100">
-            Connect to ChimeraAI:
+            Connect to Suimera:
           </span>{" "}
           Visit the platform and link your wallet.
         </li>
         <li>
           <span className="font-semibold text-gray-100">Explore Markets:</span>{" "}
-          Browse active markets, choose an outcome, and stake PYUSD.
+          Browse active markets, choose an outcome, and stake SUI.
         </li>
         <li>
           <span className="font-semibold text-gray-100">Track & Withdraw:</span>{" "}
@@ -204,7 +204,7 @@ const learnSections = [
     content: (
       <div className="space-y-4">
         <p className="text-gray-300 text-sm leading-relaxed">
-          ChimeraAI distributes winnings using a proportional (pro-rata) model.
+          Suimera distributes winnings using a proportional (pro-rata) model.
           After deducting any platform or market-level fee, the remaining pool
           is split among all participants on the correct outcome in proportion
           to their stake.
@@ -217,24 +217,24 @@ const learnSections = [
         <p className="text-gray-300 text-sm leading-relaxed">
           <span className="font-semibold text-gray-100">Worked Example:</span>
           <br />
-          Total Pool: 1,000 PYUSD | Platform Fee: 2.5% (25 PYUSD) | Remaining Pool:
-          975 PYUSD
+          Total Pool: 1,000 SUI | Platform Fee: 2.5% (25 SUI) | Remaining Pool:
+          975 SUI
           <br />
-          Outcome A (Winner): 400 PYUSD | Outcome B (Loser): 600 PYUSD
+          Outcome A (Winner): 400 SUI | Outcome B (Loser): 600 SUI
           <br />
-          Emma stakes 100 PYUSD on Outcome A → Emma's share = 100 ÷ 400 = 25% →
-          Payout = 25% × 975 = 243.75 PYUSD
+          Emma stakes 100 SUI on Outcome A → Emma's share = 100 ÷ 400 = 25% →
+          Payout = 25% × 975 = 243.75 SUI
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-gray-300 border-collapse">
             <thead>
               <tr className="bg-[#2a2c38] text-gray-100">
                 <th className="p-2 text-left">User</th>
-                <th className="p-2 text-left">Stake (PYUSD)</th>
+                <th className="p-2 text-left">Stake (SUI)</th>
                 <th className="p-2 text-left">Outcome Picked</th>
                 <th className="p-2 text-left">Result</th>
-                <th className="p-2 text-left">Payout (PYUSD)</th>
-                <th className="p-2 text-left">Profit (PYUSD)</th>
+                <th className="p-2 text-left">Payout (SUI)</th>
+                <th className="p-2 text-left">Profit (SUI)</th>
               </tr>
             </thead>
             <tbody>
@@ -298,10 +298,10 @@ const Page = () => {
       {/* Header */}
       <header className="text-center">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          ChimeraAI Learn
+          Suimera Learn
         </h1>
         <p className="text-gray-200 text-sm mt-2">
-          Effective Date: October 12, 2025 | Last Updated: October 12, 2025
+          Effective Date: October 26, 2025 | Last Updated: October 26, 2025
         </p>
       </header>
 

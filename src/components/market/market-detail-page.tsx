@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
+import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Market } from "@/lib/sui-client";
 import { OwnerOnly } from "@/components/auth/owner-only";

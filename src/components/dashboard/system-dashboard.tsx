@@ -16,15 +16,15 @@ import {
 
 // Import our hooks
 import { useCryptoPrices } from "@/hooks/usePythPrices";
-
-import { usePYUSDBridgeDashboard } from "@/hooks/usePYUSDBridge";
-import { useAccount } from "wagmi";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export function SystemDashboard() {
-  const { address } = useAccount();
+  const currentAccount = useCurrentAccount();
+  const address = currentAccount?.address;
 
   // Data hooks
   const { data: cryptoPrices, isLoading: pricesLoading } = useCryptoPrices();
+  
   // Mock data since ASI agent is not available
   const asiStatus = {
     isOnline: false,
@@ -36,11 +36,23 @@ export function SystemDashboard() {
     totalTrades: 0,
     successRate: 0,
     profitLoss: 0,
-    activeMarkets: 0
+    activeMarkets: 0,
+    winRate: 0,
+    totalBets: 0,
+    averageReturn: 0,
+    totalProfit: 0
   };
 
-  // Blockchain analytics removed - use direct contract calls instead
-  const bridgeDashboard = usePYUSDBridgeDashboard(address);
+  // Mock bridge dashboard data (not used in Sui-only version)
+  const bridgeDashboard = {
+    info: { isActive: false },
+    stats: {
+      totalVolume: '0',
+      totalTransfers: 0,
+      successRate: 0,
+      averageTransferTime: 0
+    }
+  };
 
   const handleRefreshAll = () => {
     window.location.reload(); // Simple refresh for now
