@@ -40,7 +40,7 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
   const [betSuccess, setBetSuccess] = useState<{txHash: string, blobId?: string} | null>(null);
   
   const currentAccount = useCurrentAccount();
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const { storeBet } = useBetWalrusStorage();
   
   const connected = !!currentAccount;
@@ -99,28 +99,71 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
         Math.floor(amount * 1e9) // Convert to MIST
       );
 
-      // Execute transaction using the hook - new dapp-kit style
-      const result = await signAndExecuteTransaction(
-        {
+      console.log('📝 Transaction created, waiting for user signature...');
+
+      // Execute transaction using the hook - using mutateAsync for Promise support
+      let result;
+      try {
+        console.log('🔄 Calling signAndExecuteTransaction...');
+        result = await signAndExecuteTransaction({
           transaction: tx,
-        },
-        {
-          onError: (error: any) => {
-            console.error('❌ Transaction failed:', error);
-            throw error;
-          },
+        });
+        console.log('✅ Transaction result received:', result);
+      } catch (signError: any) {
+        console.error('❌ Transaction error:', signError);
+        
+        // Handle signing errors specifically
+        if (signError.message?.includes('User rejected') || 
+            signError.message?.includes('cancelled') || 
+            signError.message?.includes('denied') ||
+            signError.message?.includes('User canceled')) {
+          console.log('👤 User cancelled transaction');
+          return; // Exit silently
         }
-      );
+        throw signError; // Re-throw other errors
+      }
 
-      console.log('✅ Transaction successful:', result);
+      // Check if transaction was successful and has a digest
+      if (!result || !result.digest) {
+        console.log('❌ Transaction was cancelled or returned no result:', result);
+        return; // Exit silently if user cancelled
+      }
 
-      // Only store to Walrus after transaction is confirmed
+      console.log('✅ Transaction successful with digest:', result.digest);
+
+      // Show success modal IMMEDIATELY after transaction is confirmed (don't wait for Walrus)
+      console.log('🎉 Setting bet success state with txHash:', result.digest);
+      setBetSuccess({ txHash: result.digest });
+      console.log('🎉 Bet success state set, showing success modal now');
+      
+      // Show success toast
+      toast.success('Bet placed successfully!');
+      setBetAmount('');
+      
+      console.log('📢 Dispatching betPlaced event for market:', marketId);
+      
+      // Dispatch custom event to update bet lists and refresh market data
+      const event = new CustomEvent('betPlaced', { 
+        detail: { 
+          marketId, 
+          userAddress: currentAccount?.address,
+          txHash: result.digest,
+          amount: amount
+        } 
+      });
+      window.dispatchEvent(event);
+      console.log('📢 betPlaced event dispatched successfully');
+      
+      // Store to Walrus in background (async, don't wait for it)
+      const userAddr = currentAccount?.address;
+      console.log('👤 Current user address:', userAddr);
+      
       const betData = {
         id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         marketId: marketId,
         marketTitle: marketTitle,
-        userId: currentAccount?.address || 'unknown',
-        userAddress: currentAccount?.address || 'unknown',
+        userId: userAddr,
+        userAddress: userAddr,
         betAmount: amount,
         betSide: selectedSide === 'optionA' ? 'A' as const : 'B' as const,
         odds: 1.5, // Simplified calculation
@@ -133,62 +176,132 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
           optionA: optionA,
           optionB: optionB,
           minBet: minBet,
-          maxBet: maxBet
+          maxBet: maxBet,
+          transactionHash: result.digest
         }
       };
 
-      // Store to Walrus (async, don't wait for it)
-      storeBet(betData).then((walrusResult) => {
-        if (walrusResult) {
-          console.log('✅ Bet stored to Walrus:', walrusResult);
-          setBetSuccess({ txHash: result.digest, blobId: walrusResult.blobId });
+      // FIRST: Save bet data to localStorage immediately (for fast access)
+      if (currentAccount?.address) {
+        try {
+          // Save full bet data to localStorage
+          const localBetsKey = `user_bets_${currentAccount.address}`;
+          const existingBets = localStorage.getItem(localBetsKey);
+          const bets = existingBets ? JSON.parse(existingBets) : [];
+          bets.unshift(betData); // Add to beginning (newest first)
+          localStorage.setItem(localBetsKey, JSON.stringify(bets));
+          console.log('✅ Bet data saved to localStorage for fast access');
           
-          // Save blob ID to localStorage for user's bet history
+          // Also save to global bets for market activity
+          const globalBetsKey = 'all_bets';
+          const allBetsData = localStorage.getItem(globalBetsKey);
+          const allBets = allBetsData ? JSON.parse(allBetsData) : [];
+          allBets.unshift(betData);
+          // Keep only last 100 bets to avoid localStorage bloat
+          if (allBets.length > 100) allBets.splice(100);
+          localStorage.setItem(globalBetsKey, JSON.stringify(allBets));
+          console.log('✅ Bet added to global bets list');
+        } catch (error) {
+          console.error('Failed to save bet to localStorage:', error);
+        }
+      }
+      
+      // THEN: Store to Walrus in background (as backup/permanent storage)
+      console.log('🔄 Starting Walrus storage for bet data:', betData);
+      storeBet(betData).then((walrusResult) => {
+        console.log('🔄 Walrus storage result (full):', JSON.stringify(walrusResult, null, 2));
+        if (walrusResult && walrusResult.blobId) {
+          console.log('✅ Bet stored to Walrus with blob ID:', walrusResult.blobId);
+          
+          // Update success state with blob ID (modal is already showing)
+          setBetSuccess(prev => prev ? { ...prev, blobId: walrusResult.blobId } : { txHash: result.digest, blobId: walrusResult.blobId });
+          
+          // UPDATE: Add blob ID to the bet data in localStorage
           if (currentAccount?.address) {
             try {
+              // Update user's bets with blob ID
+              const localBetsKey = `user_bets_${currentAccount.address}`;
+              const existingBets = localStorage.getItem(localBetsKey);
+              if (existingBets) {
+                const bets = JSON.parse(existingBets);
+                const betIndex = bets.findIndex((b: any) => b.id === betData.id);
+                if (betIndex !== -1) {
+                  bets[betIndex].blobId = walrusResult.blobId;
+                  bets[betIndex].metadata = {
+                    ...bets[betIndex].metadata,
+                    blobId: walrusResult.blobId
+                  };
+                  localStorage.setItem(localBetsKey, JSON.stringify(bets));
+                  console.log('✅ Blob ID added to user bet data in localStorage');
+                }
+              }
+              
+              // Update global bets with blob ID
+              const globalBetsKey = 'all_bets';
+              const allBetsData = localStorage.getItem(globalBetsKey);
+              if (allBetsData) {
+                const allBets = JSON.parse(allBetsData);
+                const betIndex = allBets.findIndex((b: any) => b.id === betData.id);
+                if (betIndex !== -1) {
+                  allBets[betIndex].blobId = walrusResult.blobId;
+                  allBets[betIndex].metadata = {
+                    ...allBets[betIndex].metadata,
+                    blobId: walrusResult.blobId
+                  };
+                  localStorage.setItem(globalBetsKey, JSON.stringify(allBets));
+                  console.log('✅ Blob ID added to global bet data in localStorage');
+                }
+              }
+              
+              // Save blob ID reference for Walrus lookups
               const storageKey = `user_bet_blobs_${currentAccount.address}`;
               const existingBlobs = localStorage.getItem(storageKey);
               const blobIds: string[] = existingBlobs ? JSON.parse(existingBlobs) : [];
               
-              // Add new blob ID if not already present
               if (!blobIds.includes(walrusResult.blobId)) {
-                blobIds.unshift(walrusResult.blobId); // Add to beginning (newest first)
+                blobIds.unshift(walrusResult.blobId);
                 localStorage.setItem(storageKey, JSON.stringify(blobIds));
-                console.log('✅ Bet blob ID saved to localStorage:', walrusResult.blobId);
+                console.log('✅ Walrus blob ID reference saved');
               }
+              
+              // Save blob ID to global index
+              const globalBlobIndex = localStorage.getItem('global_bet_blobs');
+              const globalBlobIds: string[] = globalBlobIndex ? JSON.parse(globalBlobIndex) : [];
+              if (!globalBlobIds.includes(walrusResult.blobId)) {
+                globalBlobIds.unshift(walrusResult.blobId);
+                localStorage.setItem('global_bet_blobs', JSON.stringify(globalBlobIds));
+                console.log('✅ Walrus blob ID added to global index');
+              }
+              
+              // Dispatch storage event to trigger re-render
+              window.dispatchEvent(new Event('storage'));
             } catch (error) {
-              console.error('Failed to save blob ID to localStorage:', error);
+              console.error('Failed to save Walrus blob ID:', error);
             }
           }
         } else {
-          // If Walrus storage fails, still show success with transaction hash
-          setBetSuccess({ txHash: result.digest });
+          console.log('❌ Walrus storage returned null or invalid result:', walrusResult);
         }
       }).catch((error) => {
-        console.error('❌ Failed to store bet to Walrus:', error);
-        // Don't show error to user as the bet was successful on Sui
-        setBetSuccess({ txHash: result.digest });
+        console.error('❌ Failed to store bet to Walrus (CATCH):', error);
+        console.error('Error details:', {
+          message: error?.message,
+          stack: error?.stack,
+          error: error
+        });
+        // Bet is already saved to localStorage, so it's ok if Walrus fails
       });
-
-      toast.success('Bet placed successfully!');
-      setBetAmount('');
       
-      // Dispatch custom event to update bet lists
-      window.dispatchEvent(new CustomEvent('betPlaced', { 
-        detail: { marketId, userAddress: currentAccount?.address } 
-      }));
-      
-      // Don't close dialog immediately to show success state
-      // onOpenChange(false);
-      onSuccess?.();
+      // Don't call onSuccess yet - wait for user to close the success modal
+      // onSuccess?.();
     } catch (error: any) {
       console.error('❌ Bet failed:', error);
       
       // User-friendly error messages
       let errorMessage = 'Failed to place bet';
       
-      if (error.message?.includes('cancelled') || error.message?.includes('rejected') || error.message?.includes('denied')) {
-        errorMessage = 'Transaction cancelled';
+      if (error.message?.includes('cancelled') || error.message?.includes('rejected') || error.message?.includes('denied') || error.message?.includes('Transaction was cancelled')) {
+        errorMessage = 'Transaction cancelled by user';
       } else if (error.message?.includes('insufficient')) {
         errorMessage = 'Insufficient balance or gas';
       } else if (error.message?.includes('network')) {
@@ -266,6 +379,7 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
                   onClick={() => {
                     setBetSuccess(null);
                     onOpenChange(false);
+                    onSuccess?.(); // Call onSuccess when user closes the modal
                   }}
                   className="flex-1 bg-gradient-to-r from-[#eab308] to-[#ca8a04] hover:from-[#ca8a04] hover:to-[#a16207] text-white"
                 >

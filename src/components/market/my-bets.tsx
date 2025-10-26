@@ -3,7 +3,7 @@ import { useUserBets } from '@/hooks/use-user-bets';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, TrendingDown, ExternalLink, User, BarChart3 } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, ExternalLink, User, BarChart3, Coins } from 'lucide-react';
 import Link from 'next/link';
 
 interface MyBetsProps {
@@ -51,7 +51,8 @@ export const MyBets: React.FC<MyBetsProps> = ({
     );
   }
 
-  const formatAddress = (address: string) => {
+  const formatAddress = (address: string | undefined) => {
+    if (!address) return 'Unknown';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -70,7 +71,7 @@ export const MyBets: React.FC<MyBetsProps> = ({
     <div className="space-y-6">
       {/* User Stats (only show when showing all bets) */}
       {showAllBets && stats.totalBets > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-r from-[#1A1F2C] to-[#151923] border-gray-800/50">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-[#eab308]">{stats.totalBets}</div>
@@ -87,17 +88,11 @@ export const MyBets: React.FC<MyBetsProps> = ({
           
           <Card className="bg-gradient-to-r from-[#1A1F2C] to-[#151923] border-gray-800/50">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.totalShares.toFixed(2)}</div>
-              <div className="text-xs text-gray-400">Total Shares</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-[#1A1F2C] to-[#151923] border-gray-800/50">
-            <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-purple-400">{stats.uniqueMarkets}</div>
               <div className="text-xs text-gray-400">Markets</div>
             </CardContent>
           </Card>
+          
         </div>
       )}
 
@@ -138,11 +133,11 @@ export const MyBets: React.FC<MyBetsProps> = ({
                   <div className="flex items-center space-x-3 flex-1">
                     {/* Option Icon */}
                     <div className={`p-2 rounded-lg ${
-                      bet.option === 0 
+                      bet.betSide === 'A' 
                         ? 'bg-[#eab308]/20 text-[#eab308]' 
                         : 'bg-gray-600/20 text-gray-400'
                     }`}>
-                      {bet.option === 0 ? (
+                      {bet.betSide === 'A' ? (
                         <TrendingUp className="h-4 w-4" />
                       ) : (
                         <TrendingDown className="h-4 w-4" />
@@ -152,34 +147,36 @@ export const MyBets: React.FC<MyBetsProps> = ({
                     {/* Bet Info */}
                     <div className="flex-1 min-w-0">
                       {/* Market Title (only show when showing all bets) */}
-                      {showAllBets && bet.market_title && (
+                      {showAllBets && bet.marketTitle && (
                         <div className="mb-1">
                           <Link 
-                            href={`/markets/${bet.market_id}`}
+                            href={`/markets/sui/${bet.marketId}`}
                             className="text-white font-medium hover:text-[#eab308] transition-colors truncate block"
                           >
-                            {bet.market_title}
+                            {bet.marketTitle}
                           </Link>
                         </div>
                       )}
                       
                       <div className="flex items-center space-x-2 mb-1">
                         <span className="text-[#eab308] font-bold">
-                          {bet.amount} SUI
+                          {bet.betAmount} SUI
                         </span>
                         <span className="text-gray-400 text-sm">on</span>
                         <Badge className={`text-xs ${
-                          bet.option === 0 
+                          bet.betSide === 'A' 
                             ? 'bg-[#eab308]/20 text-[#eab308] border-[#eab308]/30' 
                             : 'bg-gray-600/20 text-gray-300 border-gray-600/30'
                         }`}>
-                          {bet.option === 0 ? bet.option_a : bet.option_b}
+                          {bet.betSide === 'A' ? 'Yes' : 'No'}
                         </Badge>
                       </div>
                       
                       <div className="flex items-center space-x-4 text-xs text-gray-400">
-                        <span>Shares: {bet.shares}</span>
-                        <span>{formatTimeAgo(bet.created_at)}</span>
+                        <span>{formatTimeAgo(bet.createdAt)}</span>
+                        {bet.blobId && (
+                          <span className="text-[#eab308]">Walrus ✓</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -194,24 +191,39 @@ export const MyBets: React.FC<MyBetsProps> = ({
                         size="sm"
                         className="h-8 px-3 text-xs bg-gray-800/30 border-gray-700 text-gray-300 hover:bg-gray-700/50 hover:text-white"
                       >
-                        <Link href={`/markets/${bet.market_id}`}>
+                        <Link href={`/markets/sui/${bet.marketId}`}>
                           View Market
                         </Link>
                       </Button>
                     )}
                     
-                    {/* Transaction Link */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        window.open(`https://hashscan.io/testnet/transaction/${bet.tx_hash}`, '_blank');
-                      }}
-                      className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/50"
-                      title="View on Explorer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
+                    {/* Transaction & Walrus Links */}
+                    {bet.transactionHash && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          window.open(`https://suiscan.xyz/testnet/tx/${bet.transactionHash}`, '_blank');
+                        }}
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/50"
+                        title="View Transaction on Suiscan"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {bet.blobId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          window.open(`https://walruscan.com/testnet/blob/${bet.blobId}`, '_blank');
+                        }}
+                        className="h-8 w-8 p-0 text-[#eab308] hover:text-white hover:bg-gray-700/50"
+                        title="View on Walrus"
+                      >
+                        <Coins className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

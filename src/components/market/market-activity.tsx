@@ -2,8 +2,7 @@ import React from 'react';
 import { useBetActivity } from '@/hooks/use-bet-activity';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
-import { formatEther } from 'viem';
+import { Loader2, TrendingUp, TrendingDown, ExternalLink, Coins } from 'lucide-react';
 
 interface MarketActivityProps {
   marketId: string;
@@ -48,7 +47,8 @@ export const MarketActivity: React.FC<MarketActivityProps> = ({
     );
   }
 
-  const formatAddress = (address: string) => {
+  const formatAddress = (address: string | undefined) => {
+    if (!address) return 'Unknown';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -79,11 +79,11 @@ export const MarketActivity: React.FC<MarketActivityProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {/* Option Icon */}
-                  <div className={`p-2 rounded-lg ${activity.option === 0
+                  <div className={`p-2 rounded-lg ${activity.betSide === 'A'
                     ? 'bg-[#eab308]/20 text-[#eab308]'
                     : 'bg-gray-600/20 text-gray-400'
                     }`}>
-                    {activity.option === 0 ? (
+                    {activity.betSide === 'A' ? (
                       <TrendingUp className="h-4 w-4" />
                     ) : (
                       <TrendingDown className="h-4 w-4" />
@@ -94,39 +94,54 @@ export const MarketActivity: React.FC<MarketActivityProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-white font-medium">
-                        {formatAddress(activity.user_address)}
+                        {formatAddress(activity.userAddress)}
                       </span>
                       <span className="text-gray-400 text-sm">bet</span>
                       <span className="text-[#eab308] font-bold">
-                        {activity.amount} SUI
+                        {activity.betAmount} SUI
                       </span>
                       <span className="text-gray-400 text-sm">on</span>
-                      <Badge className={`text-xs ${activity.option === 0
+                      <Badge className={`text-xs ${activity.betSide === 'A'
                         ? 'bg-[#eab308]/20 text-[#eab308] border-[#eab308]/30'
                         : 'bg-gray-600/20 text-gray-300 border-gray-600/30'
                         }`}>
-                        {activity.option === 0 ? optionA : optionB}
+                        {activity.betSide === 'A' ? optionA : optionB}
                       </Badge>
                     </div>
 
                     <div className="flex items-center space-x-4 text-xs text-gray-400">
-                      <span>Shares: {activity.shares}</span>
-                      <span>{formatTimeAgo(activity.created_at)}</span>
+                      <span>{formatTimeAgo(activity.createdAt)}</span>
+                      {activity.blobId && (
+                        <span className="text-[#eab308]">Walrus ✓</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Transaction Link */}
+                {/* Transaction & Walrus Links */}
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => {
-                      window.open(`https://hashscan.io/testnet/transaction/${activity.tx_hash}`, '_blank');
-                    }}
-                    className="p-1 rounded hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
-                    title="View on Explorer"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </button>
+                  {activity.transactionHash && (
+                    <button
+                      onClick={() => {
+                        window.open(`https://suiscan.xyz/testnet/tx/${activity.transactionHash}`, '_blank');
+                      }}
+                      className="p-1 rounded hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
+                      title="View Transaction on Suiscan"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </button>
+                  )}
+                  {activity.blobId && (
+                    <button
+                      onClick={() => {
+                        window.open(`https://walruscan.com/testnet/blob/${activity.blobId}`, '_blank');
+                      }}
+                      className="p-1 rounded hover:bg-gray-700/50 text-[#eab308] hover:text-white transition-colors"
+                      title="View on Walrus"
+                    >
+                      <Coins className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </CardContent>

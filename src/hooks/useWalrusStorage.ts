@@ -143,6 +143,8 @@ export function useBetWalrusStorage() {
     setError(null);
 
     try {
+      console.log('📤 Sending bet to Walrus API:', betData);
+      
       const response = await fetch('/api/walrus-storage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,17 +155,30 @@ export function useBetWalrusStorage() {
         })
       });
 
-      const result = await response.json();
+      console.log('📥 Response status:', response.status, response.statusText);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to store bet');
+      const result = await response.json();
+      console.log('📥 Response body:', result);
+      
+      // Check if the API call was successful
+      if (!response.ok || result.success === false) {
+        const errorMsg = result.error || `HTTP error! status: ${response.status}`;
+        console.error('❌ API error:', errorMsg);
+        throw new Error(errorMsg);
       }
 
+      // The API returns { success: true, blobId, betId, size, cost }
+      if (!result.blobId) {
+        console.error('❌ No blobId in response:', result);
+        throw new Error('No blobId returned from API');
+      }
+
+      console.log('✅ Bet successfully stored to Walrus:', result);
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Bet storage error:', errorMessage);
+      console.error('❌ Bet storage error:', errorMessage, err);
       return null;
     } finally {
       setLoading(false);

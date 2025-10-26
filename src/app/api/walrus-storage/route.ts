@@ -72,12 +72,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'bet' && action === 'store') {
+      console.log('📥 Received bet storage request:', { type, action, data });
+      
       if (!data) {
         return NextResponse.json({ error: 'Bet data is required' }, { status: 400 });
       }
       
+      console.log('🔄 Storing bet to Walrus:', data);
+      
       // Use real Walrus HTTP API storage
       const blobResult = await storeToWalrus(data);
+      
+      console.log('✅ Bet stored to Walrus successfully:', blobResult);
+      
       return NextResponse.json({ 
         success: true, 
         blobId: blobResult.blobId,
@@ -85,6 +92,41 @@ export async function POST(request: NextRequest) {
         size: blobResult.size,
         cost: blobResult.cost
       });
+    }
+
+    if (type === 'bet' && action === 'retrieve') {
+      const { blobId } = body;
+      
+      if (!blobId) {
+        return NextResponse.json({ error: 'Blob ID is required' }, { status: 400 });
+      }
+      
+      console.log('🔄 Retrieving bet from Walrus:', blobId);
+      
+      try {
+        // Retrieve from Walrus HTTP API
+        const aggregatorUrl = 'https://aggregator.walrus-testnet.walrus.space';
+        const response = await fetch(`${aggregatorUrl}/v1/${blobId}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const betData = await response.json();
+        console.log('✅ Bet retrieved from Walrus successfully');
+        
+        return NextResponse.json({ 
+          success: true, 
+          bet: betData,
+          blobId
+        });
+      } catch (error) {
+        console.error('❌ Failed to retrieve bet from Walrus:', error);
+        return NextResponse.json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to retrieve bet'
+        }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });

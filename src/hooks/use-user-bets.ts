@@ -7,7 +7,7 @@ export const useUserBets = (userAddress?: string) => {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Fetch user's bet activities from Walrus
+    // Fetch user's bet activities from localStorage (with Walrus as backup)
     const fetchUserBets = useCallback(async () => {
         if (!userAddress) {
             setUserBets([])
@@ -18,66 +18,38 @@ export const useUserBets = (userAddress?: string) => {
             setIsLoading(true)
             setError(null)
 
-            // Get stored bet blob IDs from localStorage for this user
-            const storedBlobIds = localStorage.getItem(`user_bet_blobs_${userAddress}`)
             let userActivities: BetActivity[] = []
             
-            if (storedBlobIds) {
-                const blobIds: string[] = JSON.parse(storedBlobIds)
-                
-                // Fetch each bet from Walrus
-                for (const blobId of blobIds) {
-                    try {
-                        const response = await fetch('/api/walrus-storage', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                type: 'bet',
-                                action: 'retrieve',
-                                blobId
-                            })
-                        })
-
-                        const result = await response.json()
-                        const betData = result.success ? (result.bet || result.bets) : null
-                        
-                        if (betData) {
-                            if (Array.isArray(betData)) {
-                                // If it's an array of bets
-                                userActivities.push(...betData.map(bet => ({
-                                    id: bet.id,
-                                    marketId: bet.marketId,
-                                    marketTitle: bet.marketTitle,
-                                    userAddress: bet.userAddress,
-                                    betAmount: typeof bet.betAmount === 'number' ? bet.betAmount : Number(bet.betAmount),
-                                    betSide: bet.betSide,
-                                    createdAt: bet.createdAt || bet.timestamp,
-                                    status: bet.status || 'active',
-                                    transactionHash: bet.transactionHash,
-                                    metadata: bet.metadata
-                                })))
-                            } else {
-                                // Single bet object
-                                userActivities.push({
-                                    id: betData.id,
-                                    marketId: betData.marketId,
-                                    marketTitle: betData.marketTitle,
-                                    userAddress: betData.userAddress,
-                                    betAmount: typeof betData.betAmount === 'number' ? betData.betAmount : Number(betData.betAmount),
-                                    betSide: betData.betSide,
-                                    createdAt: betData.createdAt || betData.timestamp,
-                                    status: betData.status || 'active',
-                                    transactionHash: betData.transactionHash,
-                                    metadata: betData.metadata
-                                })
-                            }
-                        }
-                    } catch (error) {
-                        console.error(`Failed to load bet from blob ${blobId}:`, error)
-                    }
+            // FIRST: Try to get bets from localStorage (fast, reliable)
+            const localBetsKey = `user_bets_${userAddress}`;
+            const storedBets = localStorage.getItem(localBetsKey);
+            
+            if (storedBets) {
+                try {
+                    const bets = JSON.parse(storedBets);
+                    userActivities = bets.map((bet: any) => ({
+                        id: bet.id,
+                        marketId: bet.marketId,
+                        marketTitle: bet.marketTitle,
+                        userId: bet.userId || bet.userAddress || 'unknown',
+                        userAddress: bet.userAddress || bet.userId || 'unknown',
+                        betAmount: typeof bet.betAmount === 'number' ? bet.betAmount : Number(bet.betAmount),
+                        betSide: bet.betSide,
+                        createdAt: bet.createdAt || bet.timestamp,
+                        status: bet.status || 'active',
+                        transactionHash: bet.transactionHash,
+                        blobId: bet.blobId || bet.metadata?.blobId,
+                        metadata: bet.metadata
+                    }));
+                    console.log(`✅ Loaded ${userActivities.length} bets from localStorage`);
+                } catch (error) {
+                    console.error('Failed to parse localStorage bets:', error);
                 }
             }
-
+            
+            // No need to fetch from Walrus - bets are already in localStorage
+            // Walrus is just for backup/permanent storage
+            
             // Sort by creation date (newest first)
             userActivities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 

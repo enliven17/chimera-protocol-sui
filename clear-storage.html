@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+    <style>
+        body {
+            background: #1a1f2c;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: #252b3b;
+            border-radius: 10px;
+        }
+        button {
+            background: #eab308;
+            color: black;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #ca9a06;
+        }
+        .success {
+            color: #10b981;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Storage & Cache</h1>
+        <p>Click below to clear localStorage and old bet data:</p>
+        <button onclick="clearStorage()">Clear Storage</button>
+        <button onclick="window.location.href='http://localhost:3000'">Go to App</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function clearStorage() {
+            // Clear all localStorage
+            localStorage.clear();
+            
+            // Show success message
+            document.getElementById('result').innerHTML = `
+                <div class="success">
+                    <h2>✅ Storage Cleared!</h2>
+                    <p>Now do:</p>
+                    <ol style="text-align: left; display: inline-block;">
+                        <li>Press <strong>Ctrl + Shift + R</strong> (hard refresh)</li>
+                        <li>Or <strong>Ctrl + F5</strong></li>
+                        <li>Or open DevTools (F12) and right-click the refresh button → "Empty Cache and Hard Reload"</li>
+                    </ol>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
+

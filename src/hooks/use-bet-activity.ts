@@ -11,6 +11,9 @@ export interface BetActivity {
   betSide: 'A' | 'B'
   transactionHash?: string
   createdAt: string
+  marketTitle?: string
+  status?: string
+  blobId?: string
   metadata?: any
 }
 
@@ -19,21 +22,41 @@ export const useBetActivity = (marketId?: string) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch bet activities from Walrus
+  // Fetch bet activities from localStorage (primary) with Walrus as backup
   const fetchActivities = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      console.log('Fetching bet activities from Walrus...')
+      console.log('📡 Fetching bet activities from localStorage...')
       
-      // For now, we'll store activities in localStorage as a fallback
-      // In a real implementation, you'd query Walrus storage
-      const storedActivities = localStorage.getItem('bet_activities')
       let allActivities: BetActivity[] = []
       
-      if (storedActivities) {
-        allActivities = JSON.parse(storedActivities)
+      // PRIMARY: Get all bets from localStorage (fast and reliable)
+      const globalBetsKey = 'all_bets';
+      const storedBets = localStorage.getItem(globalBetsKey);
+      
+      if (storedBets) {
+        try {
+          const bets = JSON.parse(storedBets);
+          allActivities = bets.map((bet: any) => ({
+            id: bet.id,
+            marketId: bet.marketId,
+            marketTitle: bet.marketTitle,
+            userId: bet.userId || bet.userAddress || 'unknown',
+            userAddress: bet.userAddress || bet.userId || 'unknown',
+            betAmount: typeof bet.betAmount === 'number' ? bet.betAmount : Number(bet.betAmount),
+            betSide: bet.betSide,
+            createdAt: bet.createdAt || bet.timestamp,
+            status: bet.status || 'active',
+            transactionHash: bet.transactionHash,
+            blobId: bet.blobId || bet.metadata?.blobId,
+            metadata: bet.metadata
+          }));
+          console.log(`✅ Loaded ${allActivities.length} bets from localStorage`);
+        } catch (error) {
+          console.error('Failed to parse localStorage bets:', error);
+        }
       }
 
       // Filter by marketId if provided
@@ -44,10 +67,10 @@ export const useBetActivity = (marketId?: string) => {
       // Sort by creation date (newest first)
       filteredActivities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
-      console.log('Successfully fetched activities:', filteredActivities.length)
+      console.log(`✅ Successfully fetched ${filteredActivities.length} activities${marketId ? ` for market ${marketId}` : ''}`)
       setActivities(filteredActivities)
     } catch (err: any) {
-      console.error('Error fetching bet activities:', err)
+      console.error('❌ Error fetching bet activities:', err)
       setError(err.message || 'Failed to fetch bet activities')
       setActivities([])
     } finally {
@@ -92,6 +115,23 @@ export const useBetActivity = (marketId?: string) => {
   useEffect(() => {
     fetchActivities()
   }, [marketId])
+
+  // Listen for bet updates
+  useEffect(() => {
+    const handleBetUpdate = () => {
+      console.log('🔄 Bet update detected, refetching activities...')
+      fetchActivities()
+    }
+
+    // Listen for custom bet update events
+    window.addEventListener('betPlaced', handleBetUpdate)
+    window.addEventListener('storage', handleBetUpdate)
+
+    return () => {
+      window.removeEventListener('betPlaced', handleBetUpdate)
+      window.removeEventListener('storage', handleBetUpdate)
+    }
+  }, [fetchActivities])
 
   return {
     activities,

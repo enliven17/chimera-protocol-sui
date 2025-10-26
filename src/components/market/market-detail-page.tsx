@@ -114,6 +114,27 @@ export default function MarketDetailPage() {
     fetchMarket();
   }, [marketId]);
 
+  // Listen for bet updates to refresh market data
+  useEffect(() => {
+    const handleBetUpdate = (event: any) => {
+      console.log('🔄 Bet placed event received, refreshing market data');
+      console.log('Event details:', event.detail);
+      
+      // Wait a bit for blockchain to update, then refresh
+      setTimeout(() => {
+        console.log('🔄 Fetching updated market data...');
+        fetchMarket();
+      }, 1000);
+    };
+
+    // Listen for custom bet update events
+    window.addEventListener('betPlaced', handleBetUpdate);
+
+    return () => {
+      window.removeEventListener('betPlaced', handleBetUpdate);
+    };
+  }, [fetchMarket]);
+
   const trades: any[] = []; // Would come from Sui contract events
   const comments: any[] = []; // Comments would come from Walrus storage
   const userPosition = null; // Would need Sui wallet connection
@@ -140,15 +161,13 @@ export default function MarketDetailPage() {
   }
 
   // Extract image from market data
-  const finalImageURI = market.imageURI;
+  const finalImageURI = market.imageUrl;
   const hasValidImage = finalImageURI && !imageError;
 
-  const totalShares =
-    parseFloat(market.totalOptionAShares) +
-    parseFloat(market.totalOptionBShares);
+  const totalShares = market.totalOptionAShares + market.totalOptionBShares;
   const optionAPercentage =
     totalShares > 0
-      ? (parseFloat(market.totalOptionAShares) / totalShares) * 100
+      ? (market.totalOptionAShares / totalShares) * 100
       : 50;
   const optionBPercentage = 100 - optionAPercentage;
 
@@ -342,7 +361,7 @@ export default function MarketDetailPage() {
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-blue-400" />
               <span>
-                {new Date(parseInt(market.createdAt) * 1000).toLocaleDateString()}
+                {new Date(market.createdAt).toLocaleDateString()}
               </span>
             </div>
 
@@ -355,7 +374,7 @@ export default function MarketDetailPage() {
 
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-yellow-400" />
-              <span>{formatCurrency(market.totalPool)} SUI volume</span>
+              <span>{formatCurrency(market.totalPool / 1e9)} SUI volume</span>
             </div>
           </div>
         </div>
@@ -402,57 +421,17 @@ export default function MarketDetailPage() {
                   </div>
                 )}
 
-                {/* User Position Display */}
+                {/* User Position Display - Commented out as we don't have user position data yet */}
+                {/* 
                 {userPosition && (
                   <div className="bg-gradient-to-r from-[#0A0C14] to-[#1A1F2C]/30 rounded-xl p-4 border border-gray-800/50">
                     <h4 className="text-sm font-semibold text-gray-300 mb-3 flex items-center space-x-2">
                       <Zap className="h-4 w-4 text-[#eab308]" />
                       <span>Your Position</span>
                     </h4>
-                    <div className="grid grid-cols-3 gap-4 text-sm mb-4">
-                      <div className="text-center">
-                        <div className="text-[#eab308] font-bold text-lg">
-                          {formatCurrency(userPosition.optionAShares)}
-                        </div>
-                        <div className="text-gray-500 text-xs">{market.optionA} shares</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-gray-400 font-bold text-lg">
-                          {formatCurrency(userPosition.optionBShares)}
-                        </div>
-                        <div className="text-gray-500 text-xs">{market.optionB} shares</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-white font-bold text-lg">
-                          {formatCurrency(userPosition.totalInvested)} SUI
-                        </div>
-                        <div className="text-gray-500 text-xs">Total invested</div>
-                      </div>
-                    </div>
-                    
-                    {/* Claim Winnings Button - Only show if market is resolved and user has winning position */}
-                    {actualStatus === MarketStatus.Resolved && market.outcome !== undefined && (
-                      (() => {
-                        const hasWinningShares = market.outcome === 0 
-                          ? parseFloat(userPosition.optionAShares) > 0
-                          : parseFloat(userPosition.optionBShares) > 0;
-                        
-                        if (hasWinningShares) {
-                          return (
-                            <Button
-                              onClick={handleClaimWinnings}
-                              className="w-full bg-gradient-to-r from-[#eab308] to-[#ca8a04] hover:from-[#ca8a04] hover:to-[#a16207] text-white shadow-lg"
-                              size="sm"
-                            >
-                              💰 Claim Winnings
-                            </Button>
-                          );
-                        }
-                        return null;
-                      })()
-                    )}
                   </div>
                 )}
+                */}
 
                 {/* Show disabled message for non-active markets */}
                 {isBettingDisabled && (
@@ -462,7 +441,7 @@ export default function MarketDetailPage() {
                       <span className="text-sm font-medium">
                         {actualStatus === MarketStatus.Resolved
                           ? "Market has been resolved"
-                          : market.endTime && parseInt(market.endTime) * 1000 <= Date.now()
+                          : market.endTime && market.endTime <= Date.now()
                           ? "Market has ended - awaiting resolution"
                           : "Betting not available"}
                       </span>
@@ -514,13 +493,13 @@ export default function MarketDetailPage() {
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800/50">
                   <div className="text-center p-3 rounded-lg bg-gray-800/20">
                     <div className="text-xl font-bold text-white">
-                      {formatCurrency(market.totalPool)}
+                      {formatCurrency(market.totalPool / 1e9)} SUI
                     </div>
                     <div className="text-xs text-gray-400 font-medium">Volume</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gray-800/20">
                     <div className="text-xl font-bold text-white">
-                      {formatCurrency(totalShares)}
+                      {formatCurrency(totalShares / 1e9)}
                     </div>
                     <div className="text-xs text-gray-400 font-medium">Shares</div>
                   </div>

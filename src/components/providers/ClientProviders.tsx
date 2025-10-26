@@ -1,8 +1,8 @@
 "use client";
 
-// Import Mysten CSS on client side only
-import '@mysten/dapp-kit/dist/index.css';
 import { ReactNode } from 'react';
+// Import Mysten CSS with correct path
+import '@mysten/dapp-kit/dist/index.css';
 
 interface ClientProvidersProps {
   children: ReactNode;
@@ -15,4 +15,5 @@ interface ClientProvidersProps {
 export function ClientProviders({ children }: ClientProvidersProps) {
   return <>{children}</>;
 }
+
 

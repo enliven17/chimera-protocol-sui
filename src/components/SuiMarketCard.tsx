@@ -106,20 +106,42 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
         Math.floor(amount * 1e9) // Convert to MIST
       );
 
-      // Execute transaction using the hook - new dapp-kit style
-      const result = await signAndExecuteTransaction(
-        {
-          transaction: tx,
-        },
-        {
-          onError: (error: any) => {
-            console.error('❌ Transaction failed:', error);
-            throw error;
-          },
-        }
-      );
+      console.log('📝 Transaction created, waiting for user signature...');
 
-      console.log('✅ Transaction successful:', result);
+      // Execute transaction using the hook - new dapp-kit style
+      let result;
+      try {
+        result = await signAndExecuteTransaction(
+          {
+            transaction: tx,
+          },
+          {
+            onError: (error: any) => {
+              console.error('❌ Transaction failed:', error);
+              throw error;
+            },
+          }
+        );
+      } catch (signError: any) {
+        // Handle signing errors specifically
+        if (signError.message?.includes('User rejected') || 
+            signError.message?.includes('cancelled') || 
+            signError.message?.includes('denied')) {
+          console.log('👤 User cancelled transaction');
+          return; // Exit silently
+        }
+        throw signError; // Re-throw other errors
+      }
+
+      console.log('✅ Transaction result:', result);
+
+      // Check if transaction was successful and has a digest
+      if (!result || !result.digest) {
+        console.log('❌ Transaction was cancelled or returned no result');
+        return; // Exit silently if user cancelled
+      }
+
+      console.log('✅ Transaction successful with digest:', result.digest);
 
       // Only store to Walrus and show success after transaction is confirmed
       const betData = {
@@ -147,16 +169,51 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
       };
 
       // Store to Walrus (async, don't wait for it)
-      storeBet(betData).then((result) => {
-        if (result) {
-          console.log('✅ Bet stored to Walrus:', result);
+      console.log('🔄 Starting Walrus storage for bet data:', betData);
+      storeBet(betData).then((walrusResult) => {
+        console.log('🔄 Walrus storage result:', walrusResult);
+        if (walrusResult) {
+          console.log('✅ Bet stored to Walrus:', walrusResult);
+          
+          // Save blob ID to localStorage for user's bet history
+          if (currentAccount?.address) {
+            try {
+              const storageKey = `user_bet_blobs_${currentAccount.address}`;
+              const existingBlobs = localStorage.getItem(storageKey);
+              const blobIds: string[] = existingBlobs ? JSON.parse(existingBlobs) : [];
+              
+              console.log('📝 Current blob IDs in localStorage:', blobIds);
+              
+              // Add new blob ID if not already present
+              if (!blobIds.includes(walrusResult.blobId)) {
+                blobIds.unshift(walrusResult.blobId); // Add to beginning (newest first)
+                localStorage.setItem(storageKey, JSON.stringify(blobIds));
+                console.log('✅ Bet blob ID saved to localStorage:', walrusResult.blobId);
+              } else {
+                console.log('ℹ️ Blob ID already exists in localStorage');
+              }
+              
+              // Also add to global index for MarketActivity to find all bets
+              const globalBlobIndex = localStorage.getItem('global_bet_blobs');
+              const globalBlobIds: string[] = globalBlobIndex ? JSON.parse(globalBlobIndex) : [];
+              if (!globalBlobIds.includes(walrusResult.blobId)) {
+                globalBlobIds.unshift(walrusResult.blobId);
+                localStorage.setItem('global_bet_blobs', JSON.stringify(globalBlobIds));
+                console.log('✅ Bet blob ID added to global index');
+              }
+            } catch (error) {
+              console.error('Failed to save blob ID to localStorage:', error);
+            }
+          }
+        } else {
+          console.log('❌ Walrus storage returned null result');
         }
       }).catch((error) => {
         console.error('❌ Failed to store bet to Walrus:', error);
         // Don't show error to user as the bet was successful on Sui
       });
 
-      toast.success('Bet placed successfully!');
+      toast.success(`Bet placed successfully! TX: ${result.digest.slice(0, 8)}...`);
       setBetAmount('');
       setSelectedOption(null);
       
@@ -173,8 +230,8 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
       // User-friendly error messages
       let errorMessage = 'Failed to place bet';
       
-      if (error.message?.includes('cancelled') || error.message?.includes('rejected') || error.message?.includes('denied')) {
-        errorMessage = 'Transaction cancelled';
+      if (error.message?.includes('cancelled') || error.message?.includes('rejected') || error.message?.includes('denied') || error.message?.includes('Transaction was cancelled')) {
+        errorMessage = 'Transaction cancelled by user';
       } else if (error.message?.includes('insufficient')) {
         errorMessage = 'Insufficient balance or gas';
       } else if (error.message?.includes('network')) {

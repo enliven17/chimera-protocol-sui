@@ -78,48 +78,7 @@ export const BetDialog: React.FC<BetDialogProps> = ({
   const selectedOption = selectedSide === 'optionA' ? optionA : optionB;
   const optionIndex = selectedSide === 'optionA' ? 0 : 1;
 
-  // Handle successful transactions
-  useEffect(() => {
-    if (isConfirmed && hash) {
-      // Store bet data to Walrus decentralized storage
-      const betData = {
-        id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        marketId: marketId,
-        marketTitle: marketTitle,
-        userId: address || 'unknown',
-        userAddress: address || 'unknown',
-        betAmount: parseFloat(betAmount),
-        betSide: selectedSide === 'optionA' ? 'A' as const : 'B' as const,
-        odds: 1.5, // Simplified calculation
-        potentialPayout: parseFloat(betAmount) * 1.5,
-        status: 'active' as const,
-        createdAt: new Date().toISOString(),
-        metadata: {
-          hederaTransaction: true,
-          transactionHash: hash,
-          optionA: optionA,
-          optionB: optionB,
-          chainId: chain?.id
-        }
-      };
-
-      // Store to Walrus (async, don't wait for it)
-      storeBet(betData).then((result) => {
-        if (result) {
-          console.log('✅ Bet stored to Walrus:', result);
-        }
-      }).catch((error) => {
-        console.error('❌ Failed to store bet to Walrus:', error);
-        // Don't show error to user as the bet was successful on Hedera
-      });
-
-      toast.success('Bet placed successfully!');
-      setBetAmount('');
-      setCurrentStep('input');
-      onSuccess?.();
-      onOpenChange(false);
-    }
-  }, [isConfirmed, hash, onSuccess, onOpenChange]);
+  // No longer using wagmi useEffect for success handling - we do it directly in handleSubmit
 
   // Reset step when dialog closes
   useEffect(() => {
@@ -218,16 +177,81 @@ export const BetDialog: React.FC<BetDialogProps> = ({
       
       console.log('✅ Bet transaction submitted successfully:', txHash);
       
+      // Store bet data to Walrus decentralized storage
+      const betData = {
+        id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        marketId: marketId,
+        marketTitle: marketTitle,
+        userId: address || 'unknown',
+        userAddress: address || 'unknown',
+        betAmount: parseFloat(betAmount),
+        betSide: selectedSide === 'optionA' ? 'A' as const : 'B' as const,
+        odds: 1.5,
+        potentialPayout: parseFloat(betAmount) * 1.5,
+        status: 'active' as const,
+        createdAt: new Date().toISOString(),
+        transactionHash: txHash,
+        metadata: {
+          hederaTransaction: true,
+          transactionHash: txHash,
+          optionA: optionA,
+          optionB: optionB,
+          chainId: chain?.id
+        }
+      };
+
+      // Store to Walrus immediately after successful transaction
+      console.log('📤 Storing bet to Walrus:', betData);
+      storeBet(betData).then((result) => {
+        if (result) {
+          console.log('✅ Bet stored to Walrus:', result);
+          
+          // Save blob ID to localStorage for user's bet history
+          if (address) {
+            try {
+              const storageKey = `user_bet_blobs_${address}`;
+              const existingBlobs = localStorage.getItem(storageKey);
+              const blobIds: string[] = existingBlobs ? JSON.parse(existingBlobs) : [];
+              
+              if (!blobIds.includes(result.blobId)) {
+                blobIds.unshift(result.blobId);
+                localStorage.setItem(storageKey, JSON.stringify(blobIds));
+                console.log('✅ Bet blob ID saved to localStorage:', result.blobId);
+              }
+              
+              // Also add to global index
+              const globalBlobIndex = localStorage.getItem('global_bet_blobs');
+              const globalBlobIds: string[] = globalBlobIndex ? JSON.parse(globalBlobIndex) : [];
+              if (!globalBlobIds.includes(result.blobId)) {
+                globalBlobIds.unshift(result.blobId);
+                localStorage.setItem('global_bet_blobs', JSON.stringify(globalBlobIds));
+                console.log('✅ Bet blob ID added to global index');
+              }
+            } catch (error) {
+              console.error('Failed to save blob ID to localStorage:', error);
+            }
+          }
+        }
+      }).catch((error) => {
+        console.error('❌ Failed to store bet to Walrus:', error);
+      });
+      
+      // Dispatch event to update bet lists
+      window.dispatchEvent(new CustomEvent('betPlaced', { 
+        detail: { marketId, userAddress: address, txHash } 
+      }));
+      
       // Show success step
       updateStep('success');
+      toast.success('Bet placed successfully!');
       
-      // Close dialog after successful bet
+      // Wait longer to show success message, then close
       setTimeout(() => {
         onOpenChange(false);
         setBetAmount('');
         updateStep('input');
         onSuccess?.();
-      }, 3000);
+      }, 5000);
     } catch (error: any) {
       console.error('❌ Bet failed:', error);
       
@@ -449,12 +473,17 @@ export const BetDialog: React.FC<BetDialogProps> = ({
                 <Button
                   type="submit"
                   className="flex-1 bg-gradient-to-r from-[#FFE100] to-[#E6CC00] hover:from-[#E6CC00] hover:to-[#CCAA00] text-black shadow-lg font-semibold"
-                  disabled={!isValidAmount || isSubmitting || isPending || !address || !hasEnoughBalance || needsApproval}
+                  disabled={!isValidAmount || isSubmitting || isPending || !address || !hasEnoughBalance || needsApproval || currentStep === 'success'}
                 >
-                  {isSubmitting || isPending || isConfirming ? (
+                  {currentStep === 'success' ? (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Bet Placed Successfully!</span>
+                    </div>
+                  ) : currentStep === 'betting' || isSubmitting || isPending || isConfirming ? (
                     <div className="flex items-center space-x-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Placing Bet...</span>
+                      <span>Waiting for Transaction...</span>
                     </div>
                   ) : (
                     `Place Bet (${betAmount || '0'} PYUSD)`
