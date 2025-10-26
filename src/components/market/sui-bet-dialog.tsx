@@ -92,12 +92,14 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
       console.log('🎯 Placing Sui bet:', { marketId, optionIndex, betAmount, address: currentAccount?.address });
       
       // Place bet on Sui blockchain
-      await placeBet(
+      const result = await placeBet(
         marketId,
         optionIndex,
         Math.floor(amount * 1e9), // Convert to MIST
         signAndExecuteTransaction
       );
+
+      console.log('✅ Bet transaction result:', result);
 
       // Store bet data to Walrus decentralized storage
       const betData = {
@@ -122,10 +124,13 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
       };
 
       // Store to Walrus (async, don't wait for it)
-      storeBet(betData).then((result) => {
-        if (result) {
-          console.log('✅ Bet stored to Walrus:', result);
-          setBetSuccess({ txHash: result.digest, blobId: result.blobId });
+      storeBet(betData).then((walrusResult) => {
+        if (walrusResult) {
+          console.log('✅ Bet stored to Walrus:', walrusResult);
+          setBetSuccess({ txHash: result.digest, blobId: walrusResult.blobId });
+        } else {
+          // If Walrus storage fails, still show success with transaction hash
+          setBetSuccess({ txHash: result.digest });
         }
       }).catch((error) => {
         console.error('❌ Failed to store bet to Walrus:', error);

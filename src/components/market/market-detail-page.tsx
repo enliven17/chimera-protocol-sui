@@ -355,7 +355,7 @@ export default function MarketDetailPage() {
 
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-yellow-400" />
-              <span>{formatCurrency(market.totalPool)} PYUSD volume</span>
+              <span>{formatCurrency(market.totalPool)} SUI volume</span>
             </div>
           </div>
         </div>
@@ -424,7 +424,7 @@ export default function MarketDetailPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-white font-bold text-lg">
-                          {formatCurrency(userPosition.totalInvested)} PYUSD
+                          {formatCurrency(userPosition.totalInvested)} SUI
                         </div>
                         <div className="text-gray-500 text-xs">Total invested</div>
                       </div>

@@ -266,3 +266,5 @@ export class BetWalrusStorage {
 // Singleton instance
 export const betWalrusStorage = new BetWalrusStorage();
 
+
+

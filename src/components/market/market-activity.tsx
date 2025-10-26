@@ -98,7 +98,7 @@ export const MarketActivity: React.FC<MarketActivityProps> = ({
                       </span>
                       <span className="text-gray-400 text-sm">bet</span>
                       <span className="text-[#eab308] font-bold">
-                        {activity.amount} PYUSD
+                        {activity.amount} SUI
                       </span>
                       <span className="text-gray-400 text-sm">on</span>
                       <Badge className={`text-xs ${activity.option === 0

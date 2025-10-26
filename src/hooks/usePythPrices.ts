@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { PriceServiceConnection } from '@pythnetwork/pyth-sdk-js';
 
 // SUI Price ID from Pyth
 export const PYTH_PRICE_IDS = {
@@ -24,30 +23,47 @@ interface UsePythPriceResult {
 // Pyth Hermes API base URL
 const PYTH_API_BASE = 'https://hermes.pyth.network/v2';
 
-// Fetch price data from Pyth Hermes API using SDK
+// Fetch price data from Pyth Hermes REST API
 async function fetchPythPrice(priceId: string): Promise<PriceData> {
   try {
-    // Create Pyth connection
-    const connection = new PriceServiceConnection('https://hermes.pyth.network/v2');
+    // Use Pyth Hermes REST API
+    const response = await fetch(`${PYTH_API_BASE}/updates/price/latest?ids[]=${priceId}`);
     
-    // Get latest price feeds
-    const priceFeeds = await connection.getLatestPriceFeeds([priceId]);
-    
-    if (!priceFeeds || priceFeeds.length === 0) {
-      throw new Error(`No price feed found for ID: ${priceId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch price: ${response.statusText}`);
     }
     
-    const priceFeed = priceFeeds[0];
-    const price = priceFeed.getPriceUnchecked();
+    const data = await response.json();
+    
+    // Pyth returns price data in a specific format
+    // The response contains price information with expo adjustment
+    if (!data.parsed || data.parsed.length === 0) {
+      throw new Error('No price data in response');
+    }
+    
+    const priceInfo = data.parsed[0];
+    const priceData = priceInfo.price;
+    
+    // Parse price data from API response
+    // price is a string like "254260113", expo is -8
+    const priceStr = priceData.price || "0";
+    const confStr = priceData.conf || "0";
+    const expo = priceData.expo || -8;
+    const publish_time = priceData.publish_time || Math.floor(Date.now() / 1000);
+    
+    // Convert price from integer to float based on expo
+    // Example: price = "254260113", expo = -8 means 2.54260113
+    const adjustedPrice = parseFloat(priceStr) * Math.pow(10, expo);
+    const adjustedConf = parseFloat(confStr) * Math.pow(10, expo);
     
     return {
-      price: price.price,
-      confidence: price.conf,
-      timestamp: price.publishTime,
-      expo: price.expo
+      price: adjustedPrice,
+      confidence: adjustedConf,
+      timestamp: publish_time,
+      expo
     };
   } catch (error) {
-    console.warn('Pyth SDK failed:', error);
+    console.warn('Pyth API failed:', error);
     throw error;
   }
 }

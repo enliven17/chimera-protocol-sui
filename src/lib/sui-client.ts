@@ -124,34 +124,38 @@ export async function placeBet(
   marketId: string,
   option: number,
   amount: number,
-  signer: any
-) {
-  const tx = new TransactionBlock();
+  signAndExecuteTransaction: any
+): Promise<any> {
+  const txb = new TransactionBlock();
   
   // Split coin for the bet
-  const [coin] = tx.splitCoins(tx.gas, [tx.pure(amount)]);
+  const [coin] = txb.splitCoins(txb.gas, [txb.pure(amount)]);
   
-  tx.moveCall({
+  txb.moveCall({
     target: `${PACKAGE_ID}::prediction_market::place_bet`,
     arguments: [
-      tx.object(marketId),
-      tx.pure(option),
+      txb.object(marketId),
+      txb.pure(option),
       coin,
-      tx.object('0x6'), // Clock object
+      txb.object('0x6'), // Clock object
     ],
   });
 
+  // Pass the TransactionBlock directly to dapp-kit - it will handle signing
   return new Promise((resolve, reject) => {
-    signer({
-      transactionBlock: tx,
-      options: {
-        showEffects: true,
-        showObjectChanges: true,
+    signAndExecuteTransaction(
+      {
+        transaction: txb,
+        options: {
+          showEffects: true,
+          showObjectChanges: true,
+        },
       },
-    }, {
-      onSuccess: (result: any) => resolve(result),
-      onError: (error: any) => reject(error),
-    });
+      {
+        onSuccess: (result: any) => resolve(result),
+        onError: (error: any) => reject(error),
+      }
+    );
   });
 }
 

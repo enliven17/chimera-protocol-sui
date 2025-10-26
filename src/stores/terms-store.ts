@@ -89,7 +89,7 @@ export const checkPreviousRegionAcknowledgment = (): { acknowledged: boolean; co
   if (typeof window === 'undefined') {
     return { acknowledged: false };
   }
-  
+
   const acknowledged = localStorage.getItem("suimeraai-region-acknowledged") === "true";
   const countryCode = localStorage.getItem("suimeraai-region-country") || undefined;
 
