@@ -105,9 +105,6 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
           transaction: tx,
         },
         {
-          onSuccess: (result: any) => {
-            console.log('✅ Transaction successful:', result);
-          },
           onError: (error: any) => {
             console.error('❌ Transaction failed:', error);
             throw error;
@@ -115,9 +112,9 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
         }
       );
 
-      console.log('✅ Bet transaction result:', result);
+      console.log('✅ Transaction successful:', result);
 
-      // Store bet data to Walrus decentralized storage
+      // Only store to Walrus after transaction is confirmed
       const betData = {
         id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         marketId: marketId,
@@ -130,6 +127,7 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
         potentialPayout: amount * 1.5,
         status: 'active' as const,
         createdAt: new Date().toISOString(),
+        transactionHash: result.digest, // Add transaction hash
         metadata: {
           suiTransaction: true,
           optionA: optionA,
@@ -174,6 +172,12 @@ export const SuiBetDialog: React.FC<SuiBetDialogProps> = ({
 
       toast.success('Bet placed successfully!');
       setBetAmount('');
+      
+      // Dispatch custom event to update bet lists
+      window.dispatchEvent(new CustomEvent('betPlaced', { 
+        detail: { marketId, userAddress: currentAccount?.address } 
+      }));
+      
       // Don't close dialog immediately to show success state
       // onOpenChange(false);
       onSuccess?.();

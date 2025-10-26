@@ -35,6 +35,24 @@ export default function MyBetsPage() {
     }
   }, [isConnected, address]);
 
+  // Listen for bet updates
+  useEffect(() => {
+    const handleBetUpdate = () => {
+      if (isConnected && address) {
+        loadUserBets();
+      }
+    };
+
+    // Listen for custom bet update events
+    window.addEventListener('betPlaced', handleBetUpdate);
+    window.addEventListener('storage', handleBetUpdate);
+
+    return () => {
+      window.removeEventListener('betPlaced', handleBetUpdate);
+      window.removeEventListener('storage', handleBetUpdate);
+    };
+  }, [isConnected, address]);
+
   const loadUserBets = async () => {
     if (!address) return;
     

@@ -107,14 +107,11 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
       );
 
       // Execute transaction using the hook - new dapp-kit style
-      await signAndExecuteTransaction(
+      const result = await signAndExecuteTransaction(
         {
           transaction: tx,
         },
         {
-          onSuccess: (result: any) => {
-            console.log('✅ Transaction successful:', result);
-          },
           onError: (error: any) => {
             console.error('❌ Transaction failed:', error);
             throw error;
@@ -122,7 +119,9 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
         }
       );
 
-      // Store bet data to Walrus decentralized storage
+      console.log('✅ Transaction successful:', result);
+
+      // Only store to Walrus and show success after transaction is confirmed
       const betData = {
         id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         marketId: market.id,
@@ -137,6 +136,7 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
         potentialPayout: amount * 1.5, // Simplified calculation
         status: 'active' as const,
         createdAt: new Date().toISOString(),
+        transactionHash: result.digest, // Add transaction hash
         metadata: {
           suiTransaction: true,
           optionA: market.optionA,
@@ -159,6 +159,13 @@ export function SuiMarketCard({ market, onUpdate }: SuiMarketCardProps) {
       toast.success('Bet placed successfully!');
       setBetAmount('');
       setSelectedOption(null);
+      
+      // Dispatch custom event to update bet lists
+      window.dispatchEvent(new CustomEvent('betPlaced', { 
+        detail: { marketId: market.id, userAddress: currentAccount?.address } 
+      }));
+      
+      // Update the UI after successful transaction
       onUpdate?.();
     } catch (error: any) {
       console.error('❌ Bet failed:', error);
